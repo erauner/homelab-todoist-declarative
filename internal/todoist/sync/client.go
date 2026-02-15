@@ -17,6 +17,8 @@ type Client struct {
 
 func New(http *todoisthttp.Client) *Client { return &Client{http: http} }
 
+const maxCommandsPerSync = 100
+
 // Command represents a /sync command.
 // See: https://developer.todoist.com/api/v1/ ("/sync" section).
 //
@@ -25,10 +27,10 @@ func New(http *todoisthttp.Client) *Client { return &Client{http: http} }
 //
 // Commands are submitted as a JSON array encoded into a form field named "commands".
 type Command struct {
-	Type   string                 `json:"type"`
-	UUID   string                 `json:"uuid"`
-	TempID *string                `json:"temp_id,omitempty"`
-	Args   map[string]any         `json:"args"`
+	Type   string         `json:"type"`
+	UUID   string         `json:"uuid"`
+	TempID *string        `json:"temp_id,omitempty"`
+	Args   map[string]any `json:"args"`
 }
 
 func NewCommand(cmdType string, args map[string]any) Command {
@@ -59,7 +61,7 @@ type Filter struct {
 }
 
 type SyncResponse struct {
-	SyncStatus    map[string]any   `json:"sync_status"`
+	SyncStatus    map[string]any    `json:"sync_status"`
 	TempIDMapping map[string]string `json:"temp_id_mapping"`
 
 	Filters []Filter `json:"filters"`
@@ -84,6 +86,32 @@ func (c *Client) Read(ctx context.Context, resourceTypes []string) (*SyncRespons
 
 // RunCommands submits /sync commands.
 func (c *Client) RunCommands(ctx context.Context, commands []Command) (*SyncResponse, error) {
+	// Todoist limits commands per sync operation (currently 100). Split for callers so higher
+	// level apply logic doesn't need to care about this transport detail.
+	if len(commands) > maxCommandsPerSync {
+		var merged SyncResponse
+		merged.SyncStatus = map[string]any{}
+		merged.TempIDMapping = map[string]string{}
+
+		for start := 0; start < len(commands); start += maxCommandsPerSync {
+			end := start + maxCommandsPerSync
+			if end > len(commands) {
+				end = len(commands)
+			}
+			resp, err := c.RunCommands(ctx, commands[start:end])
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range resp.SyncStatus {
+				merged.SyncStatus[k] = v
+			}
+			for k, v := range resp.TempIDMapping {
+				merged.TempIDMapping[k] = v
+			}
+		}
+		return &merged, nil
+	}
+
 	b, err := json.Marshal(commands)
 	if err != nil {
 		return nil, fmt.Errorf("marshal commands: %w", err)
