@@ -29,7 +29,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	desiredProjects := map[string]config.ProjectSpec{}
 	for _, p := range cfg.Spec.Projects {
 		desiredProjects[p.Name] = p
-		remote, exists := snap.ProjectByName(p.Name)
+		remote, exists, err := snap.ProjectByName(p.Name)
+		if err != nil {
+			return nil, err
+		}
 		if !exists {
 			plan.Operations = append(plan.Operations, Operation{
 				Kind:   KindProject,
@@ -60,10 +63,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 		if len(changes) > 0 {
 			plan.Operations = append(plan.Operations, Operation{
-				Kind:   KindProject,
-				Action: ActionUpdate,
-				Name:   p.Name,
-				ID:     remote.ID,
+				Kind:    KindProject,
+				Action:  ActionUpdate,
+				Name:    p.Name,
+				ID:      remote.ID,
 				Changes: changes,
 				ProjectPayload: &ProjectPayload{
 					DesiredName: p.Name,
@@ -90,10 +93,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 		if desiredParent != remoteParent {
 			plan.Operations = append(plan.Operations, Operation{
-				Kind:   KindProject,
-				Action: ActionMove,
-				Name:   p.Name,
-				ID:     remote.ID,
+				Kind:    KindProject,
+				Action:  ActionMove,
+				Name:    p.Name,
+				ID:      remote.ID,
 				Changes: []Change{{Field: "parent", From: remoteParent, To: desiredParent}},
 				ProjectPayload: &ProjectPayload{
 					DesiredName: p.Name,
@@ -142,7 +145,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	desiredLabels := map[string]config.LabelSpec{}
 	for _, l := range cfg.Spec.Labels {
 		desiredLabels[l.Name] = l
-		remote, exists := snap.LabelByName(l.Name)
+		remote, exists, err := snap.LabelByName(l.Name)
+		if err != nil {
+			return nil, err
+		}
 		if !exists {
 			plan.Operations = append(plan.Operations, Operation{
 				Kind:   KindLabel,
@@ -166,10 +172,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 		if len(changes) > 0 {
 			plan.Operations = append(plan.Operations, Operation{
-				Kind:   KindLabel,
-				Action: ActionUpdate,
-				Name:   l.Name,
-				ID:     remote.ID,
+				Kind:    KindLabel,
+				Action:  ActionUpdate,
+				Name:    l.Name,
+				ID:      remote.ID,
 				Changes: changes,
 				LabelPayload: &LabelPayload{
 					DesiredName: l.Name,
@@ -212,7 +218,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	desiredFilters := map[string]config.FilterSpec{}
 	for _, f := range cfg.Spec.Filters {
 		desiredFilters[f.Name] = f
-		remote, exists := snap.FilterByName(f.Name)
+		remote, exists, err := snap.FilterByName(f.Name)
+		if err != nil {
+			return nil, err
+		}
 		ord := 0
 		if f.Order != nil {
 			ord = *f.Order
@@ -248,10 +257,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 		if len(changes) > 0 {
 			plan.Operations = append(plan.Operations, Operation{
-				Kind:   KindFilter,
-				Action: ActionUpdate,
-				Name:   f.Name,
-				ID:     remote.ID,
+				Kind:    KindFilter,
+				Action:  ActionUpdate,
+				Name:    f.Name,
+				ID:      remote.ID,
 				Changes: changes,
 				FilterPayload: &FilterPayload{
 					DesiredName: f.Name,
@@ -274,10 +283,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 				continue
 			}
 			plan.Operations = append(plan.Operations, Operation{
-				Kind:   KindFilter,
-				Action: ActionDelete,
-				Name:   rf.Name,
-				ID:     rf.ID,
+				Kind:          KindFilter,
+				Action:        ActionDelete,
+				Name:          rf.Name,
+				ID:            rf.ID,
 				FilterPayload: &FilterPayload{RemoteID: rf.ID, DesiredName: rf.Name},
 			})
 			plan.Summary.Delete++

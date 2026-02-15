@@ -43,20 +43,20 @@ func TestBuildPlan_CreateUpdateNoop(t *testing.T) {
 		Filters: []sync.Filter{
 			{ID: "F1", Name: "Important", Query: "priority 1", Color: "red", ItemOrder: 1, IsFavorite: false, IsDeleted: false},
 		},
-		projectByName: map[string]v1.Project{},
-		labelByName:   map[string]v1.Label{},
-		filterByName:  map[string]sync.Filter{},
+		projectByName:   map[string][]v1.Project{},
+		labelByName:     map[string][]v1.Label{},
+		filterByName:    map[string][]sync.Filter{},
 		projectNameByID: map[string]string{},
 	}
 	for _, p := range snap.Projects {
-		snap.projectByName[p.Name] = p
+		snap.projectByName[p.Name] = append(snap.projectByName[p.Name], p)
 		snap.projectNameByID[p.ID] = p.Name
 	}
 	for _, l := range snap.Labels {
-		snap.labelByName[l.Name] = l
+		snap.labelByName[l.Name] = append(snap.labelByName[l.Name], l)
 	}
 	for _, f := range snap.Filters {
-		snap.filterByName[f.Name] = f
+		snap.filterByName[f.Name] = append(snap.filterByName[f.Name], f)
 	}
 
 	plan, err := BuildPlan(cfg, snap, Options{Prune: false})
@@ -84,5 +84,5 @@ func TestBuildPlan_CreateUpdateNoop(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
-func boolPtr(b bool) *bool   { return &b }
-func intPtr(i int) *int     { return &i }
+func boolPtr(b bool) *bool    { return &b }
+func intPtr(i int) *int       { return &i }
