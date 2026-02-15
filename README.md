@@ -87,38 +87,40 @@ The token is treated as a secret and is never printed.
 ## YAML schema (MVP)
 
 ```yaml
-apiVersion: homelab.todoist/v1
-kind: TodoistConfig
-metadata:
-  name: personal
-spec:
-  prune:
-    projects: false
-    labels: false
-    filters: false
+name: personal
 
-  projects:
-    - name: Work
-      color: red
-      is_favorite: true
-      view_style: list
+prune:
+  projects: false
+  labels: false
+  filters: false
 
-    - name: Homelab
-      parent: Work
-      color: blue
+projects:
+  - name: Work
+    color: red
+    is_favorite: true
+    view_style: list
 
-  labels:
-    - name: waiting
-      color: grey
-      is_favorite: true
+  - name: Homelab
+    parent: Work
+    color: blue
 
-  filters:
-    - name: Work Focus
-      query: "(today | overdue) & #Work"
-      color: red
-      is_favorite: true
-      order: 1
+labels:
+  - name: waiting
+    color: grey
+    is_favorite: true
+
+filters:
+  - name: Work Focus
+    query: "(today | overdue) & #Work"
+    color: red
+    is_favorite: true
+    order: 1
 ```
+
+Notes:
+
+- The recommended format above is intentionally not Kubernetes-shaped.
+- For backwards compatibility, `htd` also accepts the older envelope format (`apiVersion`/`kind`/`metadata`/`spec`) if you already have files in that style.
 
 ### Identity + reconciliation rules
 
@@ -168,4 +170,3 @@ go test ./...
 
 go build ./cmd/htd
 ```
-

@@ -67,15 +67,49 @@ func Load(path string) (*TodoistConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read config %q: %w", path, err)
 	}
-	var cfg TodoistConfig
-	if err := yaml.Unmarshal(b, &cfg); err != nil {
+	// Accept two wire formats:
+	// 1) "envelope": {apiVersion, kind, metadata, spec} (old/default)
+	// 2) "simple": {name, prune, projects, labels, filters}
+	//
+	// The simple format avoids Kubernetes-like conventions while keeping backwards compatibility.
+	var top map[string]any
+	if err := yaml.Unmarshal(b, &top); err != nil {
 		return nil, fmt.Errorf("parse yaml %q: %w", path, err)
+	}
+
+	var cfg TodoistConfig
+	if _, hasSpec := top["spec"]; hasSpec || top["apiVersion"] != nil || top["kind"] != nil || top["metadata"] != nil {
+		if err := yaml.Unmarshal(b, &cfg); err != nil {
+			return nil, fmt.Errorf("parse yaml %q: %w", path, err)
+		}
+	} else {
+		var sc simpleConfig
+		if err := yaml.Unmarshal(b, &sc); err != nil {
+			return nil, fmt.Errorf("parse yaml %q: %w", path, err)
+		}
+		cfg = TodoistConfig{
+			Metadata: Metadata{Name: sc.Name},
+			Spec: Spec{
+				Projects: sc.Projects,
+				Labels:   sc.Labels,
+				Filters:  sc.Filters,
+				Prune:    sc.Prune,
+			},
+		}
 	}
 	cfg.Normalize()
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+type simpleConfig struct {
+	Name     string        `yaml:"name"`
+	Projects []ProjectSpec `yaml:"projects"`
+	Labels   []LabelSpec   `yaml:"labels"`
+	Filters  []FilterSpec  `yaml:"filters"`
+	Prune    PruneSpec     `yaml:"prune"`
 }
 
 // DefaultPath returns the default config path used by the CLI.
@@ -127,14 +161,14 @@ func (c *TodoistConfig) Normalize() {
 func (c *TodoistConfig) Validate() error {
 	var errs []error
 
-	if c.APIVersion != APIVersion {
+	if c.APIVersion != "" && c.APIVersion != APIVersion {
 		errs = append(errs, fmt.Errorf("apiVersion must be %q (got %q)", APIVersion, c.APIVersion))
 	}
-	if c.Kind != Kind {
+	if c.Kind != "" && c.Kind != Kind {
 		errs = append(errs, fmt.Errorf("kind must be %q (got %q)", Kind, c.Kind))
 	}
 	if c.Metadata.Name == "" {
-		errs = append(errs, errors.New("metadata.name is required"))
+		errs = append(errs, errors.New("name is required"))
 	}
 
 	// Projects: names unique + parents exist + no cycles.
@@ -285,4 +319,3 @@ func (c *TodoistConfig) SortedProjectNames() []string {
 	sort.Strings(names)
 	return names
 }
-

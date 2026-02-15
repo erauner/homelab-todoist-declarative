@@ -4,7 +4,8 @@
 *.dll
 *.so
 *.dylib
-htd
+/htd
+/cmd/htd/htd
 
 # Build output
 /bin/

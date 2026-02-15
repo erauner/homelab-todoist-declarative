@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -68,6 +69,23 @@ func newRootCmd() *cobra.Command {
 	root.PersistentFlags().BoolVar(&prune, "prune", false, "allow deletions (also gated by spec.prune.*)")
 	root.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose debug logging")
 
+	validateCmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate config file (no network)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := config.Load(file); err != nil {
+				return err
+			}
+			// Keep output minimal; primary use is a smoke check in CI.
+			if jsonOut {
+				fmt.Fprintln(cmd.OutOrStdout(), `{"valid":true}`)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "OK")
+			}
+			return nil
+		},
+	}
+
 	planCmd := &cobra.Command{
 		Use:   "plan",
 		Short: "Compute and print the plan (no mutations)",
@@ -85,13 +103,9 @@ func newRootCmd() *cobra.Command {
 				return err
 			}
 
-			logger := log.New(os.Stderr, "", log.LstdFlags)
-			if !verbose {
-				logger = log.New(os.Stderr, "", 0)
-				logger.SetOutput(os.Stderr)
-				logger.SetPrefix("")
-				logger.SetFlags(0)
-				// discard? but we want minimal logs: use io.Discard in http client.
+			logger := log.New(io.Discard, "", 0)
+			if verbose {
+				logger = log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
 			}
 			_ = source
 
@@ -110,7 +124,7 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := output.PrintPlan(os.Stdout, plan, output.Options{JSON: jsonOut}); err != nil {
+			if err := output.PrintPlan(cmd.OutOrStdout(), plan, output.Options{JSON: jsonOut}); err != nil {
 				return err
 			}
 			if plan.Summary.TotalChanges() > 0 {
@@ -135,7 +149,10 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			logger := log.New(os.Stderr, "", log.LstdFlags)
+			logger := log.New(io.Discard, "", 0)
+			if verbose {
+				logger = log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
+			}
 			httpClient := todoisthttp.New(token,
 				todoisthttp.WithVerbose(verbose),
 				todoisthttp.WithLogger(logger),
@@ -151,7 +168,7 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := output.PrintPlan(os.Stdout, plan, output.Options{JSON: jsonOut}); err != nil {
+			if err := output.PrintPlan(cmd.OutOrStdout(), plan, output.Options{JSON: jsonOut}); err != nil {
 				return err
 			}
 			if plan.Summary.TotalChanges() == 0 {
@@ -159,7 +176,7 @@ func newRootCmd() *cobra.Command {
 			}
 
 			if !yes {
-				ok, err := confirmApply()
+				ok, err := confirmApply(cmd.InOrStdin(), cmd.ErrOrStderr())
 				if err != nil {
 					return err
 				}
@@ -172,7 +189,7 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := output.PrintApplyResult(os.Stdout, res, output.Options{JSON: jsonOut}); err != nil {
+			if err := output.PrintApplyResult(cmd.OutOrStdout(), res, output.Options{JSON: jsonOut}); err != nil {
 				return err
 			}
 			return nil
@@ -180,16 +197,17 @@ func newRootCmd() *cobra.Command {
 	}
 	applyCmd.Flags().BoolVar(&yes, "yes", false, "skip confirmation")
 
+	root.AddCommand(validateCmd)
 	root.AddCommand(planCmd)
 	root.AddCommand(applyCmd)
 
 	return root
 }
 
-func confirmApply() (bool, error) {
-	fmt.Fprint(os.Stderr, "Apply these changes? [y/N]: ")
+func confirmApply(in io.Reader, errOut io.Writer) (bool, error) {
+	fmt.Fprint(errOut, "Apply these changes? [y/N]: ")
 	var resp string
-	if _, err := fmt.Fscanln(os.Stdin, &resp); err != nil {
+	if _, err := fmt.Fscanln(in, &resp); err != nil {
 		// If user hits enter without typing, Fscanln returns error (unexpected newline).
 		// Treat as no.
 		return false, nil
@@ -197,4 +215,3 @@ func confirmApply() (bool, error) {
 	s := strings.TrimSpace(strings.ToLower(resp))
 	return s == "y" || s == "yes", nil
 }
-

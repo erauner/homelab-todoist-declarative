@@ -1,54 +1,51 @@
-apiVersion: homelab.todoist/v1
-kind: TodoistConfig
-metadata:
-  name: example
-spec:
-  prune:
-    projects: false
-    labels: false
-    filters: false
+name: example
 
-  projects:
-    - name: Work
-      color: red
-      is_favorite: true
-      view_style: list
+prune:
+  projects: false
+  labels: false
+  filters: false
 
-    - name: Personal
-      color: blue
+projects:
+  - name: Work
+    color: red
+    is_favorite: true
+    view_style: list
 
-    - name: Homelab
-      parent: Personal
-      color: charcoal
+  - name: Personal
+    color: blue
 
-  labels:
-    - name: waiting
-      color: grey
-      is_favorite: true
+  - name: Homelab
+    parent: Personal
+    color: charcoal
 
-  filters:
-    - name: Work Focus
-      query: "(today | overdue) & #Work"
-      color: red
-      is_favorite: true
-      order: 1
+labels:
+  - name: waiting
+    color: grey
+    is_favorite: true
 
-    - name: Next 7 Days Waiting
-      query: "7 days & @waiting"
-      color: blue
-      order: 2
+filters:
+  - name: Work Focus
+    query: "(today | overdue) & #Work"
+    color: red
+    is_favorite: true
+    order: 1
 
-    - name: Shared Unassigned
-      query: "!assigned & shared"
-      color: orange
-      order: 3
+  - name: Next 7 Days Waiting
+    query: "7 days & @waiting"
+    color: blue
+    order: 2
 
-    - name: Old Tasks
-      query: "created before: -365 days"
-      color: grey
-      order: 4
+  - name: Shared Unassigned
+    query: "!assigned & shared"
+    color: orange
+    order: 3
 
-    - name: Priority Split
-      query: "p1 & overdue, p4 & today"
-      color: yellow
-      order: 5
+  - name: Old Tasks
+    query: "created before: -365 days"
+    color: grey
+    order: 4
+
+  - name: Priority Split
+    query: "p1 & overdue, p4 & today"
+    color: yellow
+    order: 5
