@@ -1,0 +1,8 @@
+name: fresh-start
+prune:
+  projects: false
+  labels: false
+  filters: true
+projects: []
+labels: []
+filters: []
