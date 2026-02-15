@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/erauner/homelab-todoist-declarative/internal/config"
+	"github.com/erauner/homelab-todoist-declarative/internal/export"
 	"github.com/erauner/homelab-todoist-declarative/internal/output"
 	"github.com/erauner/homelab-todoist-declarative/internal/reconcile"
 	"github.com/erauner/homelab-todoist-declarative/internal/todoist/auth"
@@ -58,8 +60,8 @@ func newRootCmd() *cobra.Command {
 	)
 
 	root := &cobra.Command{
-		Use:   "htd",
-		Short: "Homelab Todoist Declarative reconciler",
+		Use:           "htd",
+		Short:         "Homelab Todoist Declarative reconciler",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
@@ -68,6 +70,67 @@ func newRootCmd() *cobra.Command {
 	root.PersistentFlags().BoolVar(&jsonOut, "json", false, "output JSON")
 	root.PersistentFlags().BoolVar(&prune, "prune", false, "allow deletions (also gated by spec.prune.*)")
 	root.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose debug logging")
+
+	var exportFull bool
+	var exportName string
+	var exportIncludeInbox bool
+	exportCmd := &cobra.Command{
+		Use:   "export",
+		Short: "Export current Todoist configuration to YAML",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(cmd.Context(), 60*time.Second)
+			defer cancel()
+
+			token, _, err := auth.DiscoverToken()
+			if err != nil {
+				return err
+			}
+			logger := log.New(io.Discard, "", 0)
+			if verbose {
+				logger = log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
+			}
+
+			httpClient := todoisthttp.New(token,
+				todoisthttp.WithVerbose(verbose),
+				todoisthttp.WithLogger(logger),
+			)
+			v1c := v1.New(httpClient)
+			syncC := sync.New(httpClient)
+
+			snap, err := reconcile.FetchSnapshot(ctx, v1c, syncC)
+			if err != nil {
+				return err
+			}
+
+			name := exportName
+			if strings.TrimSpace(name) == "" {
+				name = "export"
+			}
+			cfg, err := export.FromSnapshot(name, snap, export.Options{Full: exportFull, IncludeInbox: exportIncludeInbox})
+			if err != nil {
+				return err
+			}
+
+			if jsonOut {
+				b, err := json.MarshalIndent(cfg, "", "  ")
+				if err != nil {
+					return err
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), string(b))
+				return nil
+			}
+
+			b, err := cfg.ToYAML()
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(b)
+			return err
+		},
+	}
+	exportCmd.Flags().BoolVar(&exportFull, "full", false, "include managed fields (color/is_favorite/view_style)")
+	exportCmd.Flags().StringVar(&exportName, "name", "export", "config name for exported YAML")
+	exportCmd.Flags().BoolVar(&exportIncludeInbox, "include-inbox", false, "include inbox project in exported YAML")
 
 	validateCmd := &cobra.Command{
 		Use:   "validate",
@@ -197,6 +260,7 @@ func newRootCmd() *cobra.Command {
 	}
 	applyCmd.Flags().BoolVar(&yes, "yes", false, "skip confirmation")
 
+	root.AddCommand(exportCmd)
 	root.AddCommand(validateCmd)
 	root.AddCommand(planCmd)
 	root.AddCommand(applyCmd)
