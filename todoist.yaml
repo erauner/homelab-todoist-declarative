@@ -1,0 +1,1015 @@
+name: current
+prune:
+    projects: false
+    labels: false
+    filters: false
+projects:
+    - name: Autodoist Subtask Test -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Autodoist Test -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Autodoist Test -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Backlog -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Daily
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Every X Days
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Hourly
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Inbox Home -
+      color: green
+      is_favorite: false
+      view_style: list
+    - name: JIRA Review -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Monthly
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Personal
+      color: blue
+      is_favorite: false
+      view_style: list
+    - name: "Timeblocking \U0001F501"
+      color: yellow
+      is_favorite: false
+      view_style: calendar
+    - name: Weekly
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Work
+      color: red
+      is_favorite: true
+      view_style: list
+    - name: tf-fake-project
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: "\U0001F4CB 2024 Taxes (Overdue) -"
+      color: red
+      is_favorite: true
+      view_style: list
+    - name: "\U0001F4CB 2025 Taxes -"
+      color: orange
+      is_favorite: false
+      view_style: list
+    - name: Homelab
+      parent: Personal
+      color: charcoal
+      is_favorite: false
+      view_style: list
+    - name: Triage
+      parent: Inbox Home -
+      color: charcoal
+      is_favorite: false
+      view_style: list
+labels:
+    - name: 120_min
+      color: teal
+      is_favorite: false
+    - name: 30_min
+      color: teal
+      is_favorite: false
+    - name: 60_min
+      color: teal
+      is_favorite: false
+    - name: CheckOut
+      color: charcoal
+      is_favorite: false
+    - name: Chores
+      color: charcoal
+      is_favorite: false
+    - name: Consider
+      color: charcoal
+      is_favorite: false
+    - name: Documentation
+      color: charcoal
+      is_favorite: false
+    - name: Download
+      color: charcoal
+      is_favorite: false
+    - name: "Experiment\U0001F9EA"
+      color: charcoal
+      is_favorite: false
+    - name: Feedback
+      color: charcoal
+      is_favorite: false
+    - name: Focused
+      color: yellow
+      is_favorite: false
+    - name: FollowUp
+      color: charcoal
+      is_favorite: false
+    - name: Jira
+      color: charcoal
+      is_favorite: false
+    - name: ProjectFocused
+      color: charcoal
+      is_favorite: false
+    - name: Questions
+      color: charcoal
+      is_favorite: false
+    - name: Read
+      color: charcoal
+      is_favorite: false
+    - name: Review
+      color: charcoal
+      is_favorite: false
+    - name: Schedule
+      color: lime_green
+      is_favorite: false
+    - name: Troubleshoot
+      color: charcoal
+      is_favorite: false
+    - name: accountability
+      color: red
+      is_favorite: false
+    - name: afternoon
+      color: charcoal
+      is_favorite: false
+    - name: cal
+      color: charcoal
+      is_favorite: false
+    - name: commitment
+      color: magenta
+      is_favorite: false
+    - name: context/home
+      color: blue
+      is_favorite: false
+    - name: context/side
+      color: blue
+      is_favorite: false
+    - name: context/work
+      color: blue
+      is_favorite: false
+    - name: createjira
+      color: charcoal
+      is_favorite: false
+    - name: deadline/hard
+      color: orange
+      is_favorite: false
+    - name: deadline/soft
+      color: yellow
+      is_favorite: false
+    - name: due/12pm
+      color: mint_green
+      is_favorite: false
+    - name: due/1hour
+      color: mint_green
+      is_favorite: false
+    - name: due/1week
+      color: mint_green
+      is_favorite: false
+    - name: due/30min
+      color: mint_green
+      is_favorite: false
+    - name: due/3days
+      color: mint_green
+      is_favorite: false
+    - name: due/3hours
+      color: light_blue
+      is_favorite: false
+    - name: due/5pm
+      color: mint_green
+      is_favorite: false
+    - name: due/9am
+      color: mint_green
+      is_favorite: false
+    - name: due/auto_schedule
+      color: mint_green
+      is_favorite: false
+    - name: due/next_week
+      color: mint_green
+      is_favorite: false
+    - name: due/now
+      color: mint_green
+      is_favorite: false
+    - name: due/remove
+      color: mint_green
+      is_favorite: false
+    - name: due/today
+      color: mint_green
+      is_favorite: false
+    - name: due/tom_12pm
+      color: mint_green
+      is_favorite: false
+    - name: due/tom_5pm
+      color: mint_green
+      is_favorite: false
+    - name: due/tom_9am
+      color: mint_green
+      is_favorite: false
+    - name: due/tomorrow
+      color: mint_green
+      is_favorite: false
+    - name: due/weekend
+      color: mint_green
+      is_favorite: false
+    - name: dur/15min
+      color: charcoal
+      is_favorite: false
+    - name: dur/1hour
+      color: charcoal
+      is_favorite: false
+    - name: dur/2hours
+      color: charcoal
+      is_favorite: false
+    - name: dur/30min
+      color: charcoal
+      is_favorite: false
+    - name: dur/3hours
+      color: charcoal
+      is_favorite: false
+    - name: dur/4hours
+      color: charcoal
+      is_favorite: false
+    - name: dur/fullday
+      color: charcoal
+      is_favorite: false
+    - name: dur/halfday
+      color: charcoal
+      is_favorite: false
+    - name: early
+      color: charcoal
+      is_favorite: false
+    - name: evening
+      color: charcoal
+      is_favorite: false
+    - name: filter/hide-recurring
+      color: charcoal
+      is_favorite: false
+    - name: grooming/needs-context
+      color: yellow
+      is_favorite: false
+    - name: grooming/needs-details
+      color: orange
+      is_favorite: false
+    - name: grooming/needs-timing
+      color: lime_green
+      is_favorite: false
+    - name: grooming/ready
+      color: green
+      is_favorite: false
+    - name: gtd/backtoinbox
+      color: red
+      is_favorite: false
+    - name: gtd/inbox
+      color: red
+      is_favorite: false
+    - name: gtd/ready
+      color: green
+      is_favorite: false
+    - name: gtd/someday
+      color: red
+      is_favorite: false
+    - name: gtd/waiting
+      color: red
+      is_favorite: false
+    - name: iterate
+      color: charcoal
+      is_favorite: false
+    - name: keep
+      color: orange
+      is_favorite: false
+    - name: next_action
+      color: violet
+      is_favorite: false
+    - name: notion
+      color: grey
+      is_favorite: false
+    - name: plane/backend
+      color: blue
+      is_favorite: false
+    - name: plane/blocked
+      color: orange
+      is_favorite: false
+    - name: plane/frontend
+      color: violet
+      is_favorite: false
+    - name: plane/maintenance
+      color: magenta
+      is_favorite: false
+    - name: plane/mvp
+      color: red
+      is_favorite: false
+    - name: plane/quick-win
+      color: green
+      is_favorite: false
+    - name: plane/review
+      color: violet
+      is_favorite: false
+    - name: plane/sync
+      color: yellow
+      is_favorite: false
+    - name: prune/candidate
+      color: red
+      is_favorite: false
+    - name: prune/duplicate
+      color: charcoal
+      is_favorite: false
+    - name: prune/stale
+      color: grey
+      is_favorite: false
+    - name: recurring/daily
+      color: magenta
+      is_favorite: false
+    - name: recurring/every-x-days
+      color: magenta
+      is_favorite: false
+    - name: recurring/hourly
+      color: magenta
+      is_favorite: false
+    - name: recurring/monthly
+      color: magenta
+      is_favorite: false
+    - name: recurring/timeblocking
+      color: magenta
+      is_favorite: false
+    - name: recurring/weekly
+      color: magenta
+      is_favorite: false
+    - name: recurring/yearly
+      color: magenta
+      is_favorite: false
+    - name: recurring_cal
+      color: teal
+      is_favorite: false
+    - name: reset/archive
+      color: grey
+      is_favorite: false
+    - name: reset/fresh-start
+      color: green
+      is_favorite: false
+    - name: reset/overwhelm
+      color: red
+      is_favorite: false
+    - name: reviewed
+      color: charcoal
+      is_favorite: false
+    - name: scope/strategic
+      color: blue
+      is_favorite: false
+    - name: scope/tactical
+      color: green
+      is_favorite: false
+    - name: scope/violation
+      color: red
+      is_favorite: false
+    - name: source/text
+      color: charcoal
+      is_favorite: false
+    - name: system/recurring
+      color: teal
+      is_favorite: false
+    - name: waiting
+      color: grey
+      is_favorite: true
+filters:
+    - name: Test gtd
+      query: |-
+        @gtd/overdue | overdue,
+        @gtd/morning | (today  & (@morning | (!no time & date before: today at 8am))),
+        @gtd/daytime | (today & (!@morning & !@evening) & ((date after: today at 7:59am & date before: today at 6:01pm) | no time)),
+        @gtd/evening | (today & (@evening | (!no time & date after: today at 6pm & date before: tomorrow)))
+      color: charcoal
+      is_favorite: false
+      order: 1
+    - name: Work Focus
+      query: '(today | overdue) & #Work'
+      color: red
+      is_favorite: true
+      order: 1
+    - name: Next 7 Days Waiting
+      query: 7 days & @waiting
+      color: blue
+      is_favorite: false
+      order: 2
+    - name: Tasks with a deadline
+      query: '!no deadline'
+      color: charcoal
+      is_favorite: false
+      order: 2
+    - name: Shared Unassigned
+      query: '!assigned & shared'
+      color: orange
+      is_favorite: false
+      order: 3
+    - name: ⭐ Actionable Now
+      query: '(  (    !recurring    & (@next_action | @gtd/ready)    & (      (        !no time        & (          overdue          | (due today & (!due after: +20 min))        )      )      |      (        due today        & !no time        & (overdue | !due after: +20 min)      )    )  )  |  (    recurring    & subtask    & !no time    & (      overdue      | (due today & (!due after: +20 min))    )  ))'
+      color: grape
+      is_favorite: false
+      order: 3
+    - name: Old Tasks
+      query: 'created before: -365 days'
+      color: grey
+      is_favorite: false
+      order: 4
+    - name: "\U0001F4ED Global Subtask Inbox"
+      query: '@next_action & subtask & created after: -10 days & (1 days | no date)'
+      color: charcoal
+      is_favorite: false
+      order: 4
+    - name: Priority Split
+      query: p1 & overdue, p4 & today
+      color: yellow
+      is_favorite: false
+      order: 5
+    - name: "\U0001F4ED Global Inbox"
+      query: '!recurring & !subtask & created after: -10 days & (1 days | no date)'
+      color: charcoal
+      is_favorite: false
+      order: 5
+    - name: "⭐\U0001F7E2 Focused old"
+      query: '(@Focused & ((!no time & ((overdue) | (due today & (!due after: +20 min)))) | (subtask & due today & !no time & (overdue | !due after: +20 min))))'
+      color: charcoal
+      is_favorite: false
+      order: 6
+    - name: Focus On
+      query: '@Focused'
+      color: charcoal
+      is_favorite: false
+      order: 7
+    - name: Next Action Created today
+      query: 'created: today & (@next_action | @gtd_ready ) & (today | overdue)'
+      color: yellow
+      is_favorite: false
+      order: 8
+    - name: Uncompletable
+      query: Uncompletable
+      color: charcoal
+      is_favorite: false
+      order: 9
+    - name: Ready but still in inbox
+      query: '(@gtd/ready & ##Inbox)'
+      color: charcoal
+      is_favorite: false
+      order: 10
+    - name: "\U0001F534 Overdue Management:"
+      query: (overdue & !recurring) | (@next_action & overdue & !recurring)
+      color: red
+      is_favorite: false
+      order: 11
+    - name: "\U0001F7E3⚪ Next action with no due date"
+      query: (@next_action & (no date & !recurring))
+      color: charcoal
+      is_favorite: false
+      order: 12
+    - name: ☀️ Due Today
+      query: (due today|overdue) & @next_action
+      color: charcoal
+      is_favorite: false
+      order: 13
+    - name: "⭐\U0001F7E2 Focused"
+      query: (@Focused)
+      color: charcoal
+      is_favorite: false
+      order: 14
+    - name: P1 choose next focused
+      query: p1 & (/Next Actions=-) & (overdue |  1 days | no date) & !subtask & !@Focused
+      color: charcoal
+      is_favorite: false
+      order: 15
+    - name: ⭐ Choose Next Focused
+      query: (/Next Actions=-) & (overdue |  1 days | no date) & !subtask & !@Focused
+      color: charcoal
+      is_favorite: false
+      order: 16
+    - name: "⌛\U0001F7E2 What do I need to do right now?"
+      query: '( !recurring & !/waiting ==- & ((!no time & ((overdue) | (due today & (!due after: +20 min)))) | (subtask & due today & !no time & (overdue | !due after: +20 min))))'
+      color: charcoal
+      is_favorite: false
+      order: 17
+    - name: "\U0001F7E3⚪ Today's Planning (Tasks needing time assignment):"
+      query: '(@next_action & (due before: +1 day & no time & !overdue) & !recurring)'
+      color: charcoal
+      is_favorite: false
+      order: 18
+    - name: "\U0001F7E2 Next Hour and Today"
+      query: '(today & !overdue & (no time | (due after: +0 minutes & due before: +1 hour)) & (@next_action | @gtd_ready))'
+      color: charcoal
+      is_favorite: false
+      order: 19
+    - name: "\U0001F7E3⚪️ Pull Next (consider taking out if you cannot)"
+      query: '(@next_action & ((no date | (overdue & no time) | (due before: +1 day & no time)) & !recurring))'
+      color: grape
+      is_favorite: false
+      order: 20
+    - name: "\U0001F7E1 Due this week \U0001F4C5"
+      query: 'due before: next week & @next_action & !no time'
+      color: charcoal
+      is_favorite: false
+      order: 21
+    - name: "\U0001F4EC Inbox (Move to Project)"
+      query: '!subtask & created after: -2 days & #Inbox'
+      color: charcoal
+      is_favorite: false
+      order: 22
+    - name: "⚪\U0001F7E0 Created Today ( +date or @ready or @someday)"
+      query: '!/* & !#Inbox & created: today & !subtask & !@next_action & no date'
+      color: charcoal
+      is_favorite: false
+      order: 23
+    - name: ⚪  Add @ready label)
+      query: '!/* & !#Inbox & !#download & created after: -10 days & !subtask & (today | overdue) & (!no date & !no time)'
+      color: charcoal
+      is_favorite: false
+      order: 24
+    - name: "\U0001F7E2\U0001F7E3  Complete or Add Subtask or add due time or remove time"
+      query: '!subtask & !no date & @next_action & !(!subtask & !no date & !no time) & (due today | overdue)'
+      color: charcoal
+      is_favorite: false
+      order: 25
+    - name: "\U0001F7E1 Tomorrow"
+      query: tomorrow & @next_action
+      color: charcoal
+      is_favorite: false
+      order: 26
+    - name: "\U0001F7E1 Due This week \U0001F4DD shift days"
+      query: '!today & due before: next week & @next_action & !no time'
+      color: charcoal
+      is_favorite: false
+      order: 27
+    - name: Inbox tasks with gtd_ready label
+      query: '#Inbox & @gtd/ready'
+      color: charcoal
+      is_favorite: false
+      order: 28
+    - name: "\U0001F7E1 Due this week \U0001F55B Schedule a time"
+      query: '!today & due before: next week & !no date & no time & @next_action'
+      color: charcoal
+      is_favorite: false
+      order: 29
+    - name: ⚪ Incoming Inbox Tasks (no date yet)
+      query: '!/* & !#Inbox & !#download & !subtask & no date'
+      color: charcoal
+      is_favorite: false
+      order: 30
+    - name: ⚪ Tasks not in a section ( +date or @someday or @ready)
+      query: '!/* & !#Inbox & !#download & created after: -10 days & !subtask & (today | overdue) & (!no date & no time)'
+      color: charcoal
+      is_favorite: false
+      order: 31
+    - name: ⚪ Created 10+ ago (re-create or put in someday or del)
+      query: '!/* & !#Inbox & !#download & created before: -10 days & !subtask & (today | overdue | no date)'
+      color: charcoal
+      is_favorite: false
+      order: 32
+    - name: "\U0001F7E2 Today ‼️"
+      query: '(@next_action & !@Focused & !recurring & !/waiting ==- & ((!no time & ((overdue) | (due today & (!due after: +8 hour)))) | (subtask & due today & !no time & (overdue | !due after: +8 hour))))'
+      color: charcoal
+      is_favorite: false
+      order: 33
+    - name: "\U0001F7E2⚪️ Next Action Parents In Flight"
+      query: (/Next Actions=-) & (overdue |  1 days | no date) & !subtask
+      color: charcoal
+      is_favorite: false
+      order: 34
+    - name: "\U0001F7E2⚪️ ‼️ Next Action Parents In Flight"
+      query: (/Next Actions=-) & (overdue |  1 days | no date) & !subtask
+      color: charcoal
+      is_favorite: false
+      order: 35
+    - name: "\U0001F7E3 Subtasks Now"
+      query: '!recurring & subtask & @next_action & ((!no time & ((overdue ) | (due today & (!due after: +20 minutes)))) | (no time & (due today | overdue)))'
+      color: charcoal
+      is_favorite: false
+      order: 36
+    - name: ⚪ Pull Next Parent
+      query: '!recurring & !subtask & @next_action & no date & !@focus'
+      color: charcoal
+      is_favorite: false
+      order: 37
+    - name: "\U0001F534 Deadline Parent"
+      query: '!subtask & !@next_action & (overdue | !no date)'
+      color: charcoal
+      is_favorite: false
+      order: 38
+    - name: Assign a deadline and Priority
+      query: '!subtask & !@next_action & !no date & no time'
+      color: charcoal
+      is_favorite: false
+      order: 39
+    - name: "\U0001F7E2⚪️ Subtasks with next_action label and due date/time"
+      query: subtask & @next_action & !no date & !no time
+      color: charcoal
+      is_favorite: false
+      order: 40
+    - name: "\U0001F7E0 Created Today or Yesterday"
+      query: 'created: today | created: yesterday'
+      color: charcoal
+      is_favorite: false
+      order: 41
+    - name: "\U0001F535 Give Subtask to parent"
+      query: '!recurring & !subtask & @next_action & (due today | overdue)'
+      color: charcoal
+      is_favorite: false
+      order: 42
+    - name: Subtasks Next Action
+      query: '(/Next Actions=- & subtask & @next_action & ((no date | (overdue) | (due before: +2 day)) & !recurring))'
+      color: charcoal
+      is_favorite: false
+      order: 43
+    - name: "\U0001F7E2 Recurring"
+      query: "(((#Hourly ⏱️ & recurring & !no time) & (due before: +20 minutes)) | ((!#Hourly ⏱️ & recurring) & (((!no time & ((due before: +90 minutes) | (overdue & !today))) | (no time & (overdue | today)))))) & !#Every ♻️ & !#Weekly \U0001F4C6 & !#Monthly \U0001F5D3️"
+      color: grape
+      is_favorite: false
+      order: 44
+    - name: Today's next action tasks
+      query: today & @next_action
+      color: lime_green
+      is_favorite: false
+      order: 45
+    - name: Next Up tasks with next_action label
+      query: '(/Next Up-- & @next_action & ((no date | (overdue) | (due before: +2 day)) & !recurring))'
+      color: charcoal
+      is_favorite: false
+      order: 46
+    - name: Tasks in Waiting For sections
+      query: /Waiting For & !subtask
+      color: charcoal
+      is_favorite: false
+      order: 47
+    - name: Someday
+      query: /Someday & !subtask
+      color: charcoal
+      is_favorite: false
+      order: 48
+    - name: Tomorrow's next action tasks
+      query: tomorrow & @next_action
+      color: green
+      is_favorite: false
+      order: 49
+    - name: Recurring Weekly
+      query: "recurring & (#Every ♻️ | #Weekly \U0001F4C6 | #Monthly \U0001F5D3️)"
+      color: green
+      is_favorite: false
+      order: 50
+    - name: Recurring Monthly
+      query: "recurring & (#Every ♻️ | #Weekly \U0001F4C6 | #Monthly \U0001F5D3️)"
+      color: green
+      is_favorite: false
+      order: 51
+    - name: "\U0001F535 Focus This Week"
+      query: '@focus & (no date | (overdue & no time) | (overdue & due today) | ((due before: Saturday) & no time))'
+      color: charcoal
+      is_favorite: false
+      order: 52
+    - name: "\U0001F535 This Week"
+      query: '!recurring & !subtask & (((!no time & (overdue | due before: +7 days)) | (no time & due before: +7 days)) | (@focus & overdue))'
+      color: charcoal
+      is_favorite: false
+      order: 53
+    - name: "\U0001F7E3 Catch New Subtasks Today"
+      query: '!recurring & subtask & @next_action & no date & !@focus & created: today'
+      color: charcoal
+      is_favorite: false
+      order: 54
+    - name: "\U0001F535 Focus Today"
+      query: '!recurring & !subtask & (@focus & (overdue | due today | due tomorrow))'
+      color: charcoal
+      is_favorite: false
+      order: 55
+    - name: "\U0001F7E3 Overdue Subtasks"
+      query: overdue & subtask & !recurring & @next_action & !@focus
+      color: charcoal
+      is_favorite: false
+      order: 56
+    - name: "\U0001F7E3 Pull Next Subtasks"
+      query: '!recurring & subtask & @next_action & no date & !@focus'
+      color: charcoal
+      is_favorite: false
+      order: 57
+    - name: "\U0001F7E3 Next Few Days"
+      query: '!recurring & subtask & @next_action & (((!no time & (overdue | due before: +7 days)) | (no time & due before: +7 days)) | (@focus & overdue))'
+      color: charcoal
+      is_favorite: false
+      order: 58
+    - name: "\U0001F535 Recurring Next Few days"
+      query: "recurring & (#Monthly \U0001F5D3️ | #Weekly \U0001F4C6 | #Every ♻️) & due before: +5 days"
+      color: charcoal
+      is_favorite: false
+      order: 59
+    - name: "\U0001F7E1 Overdue Parent Tasks"
+      query: overdue & !subtask & !recurring & !@focus
+      color: charcoal
+      is_favorite: false
+      order: 60
+    - name: test uncompletable text
+      query: 'search:* Automation:'
+      color: magenta
+      is_favorite: false
+      order: 61
+    - name: Add - Focus on old Tasks (More than a week)
+      query: '!subtask & !@focus & created before: -7 days & !recurring & !#Download'
+      color: charcoal
+      is_favorite: false
+      order: 62
+    - name: Non-recurring parent tasks this week with next_action label
+      query: '!subtask & !recurring & due before: next week & @next_action'
+      color: charcoal
+      is_favorite: false
+      order: 63
+    - name: Job workspace next action tasks
+      query: workspace:Job & !@next_action & subtask
+      color: charcoal
+      is_favorite: false
+      order: 64
+    - name: Task Planning
+      query: view all
+      color: blue
+      is_favorite: false
+      order: 65
+    - name: Subtasks without next_action and date/time
+      query: subtask & !@next_action
+      color: charcoal
+      is_favorite: false
+      order: 66
+    - name: "Parent tasks with due date and no next_action label not under \U0001F550 subproject"
+      query: "!subtask & !no date & !@next_action & !##\U0001F550"
+      color: charcoal
+      is_favorite: false
+      order: 67
+    - name: Overdue tasks
+      query: overdue
+      color: charcoal
+      is_favorite: false
+      order: 68
+    - name: Tasks created today
+      query: 'created: today'
+      color: charcoal
+      is_favorite: false
+      order: 69
+    - name: Tasks with next action label
+      query: '@next_action'
+      color: charcoal
+      is_favorite: false
+      order: 70
+    - name: Today's tasks with no time
+      query: today & no time & @next_action
+      color: charcoal
+      is_favorite: false
+      order: 71
+    - name: Tasks due between 9am and 10am tomorrow
+      query: 'due before: 10am tomorrow & due after: 9am tomorrow'
+      color: charcoal
+      is_favorite: false
+      order: 72
+    - name: Tasks due between 9am and 10am tomorrow
+      query: 'due after: tomorrow 9am'
+      color: charcoal
+      is_favorite: false
+      order: 73
+    - name: Tasks due between 9am and 10am tomorrow
+      query: 'due after: tomorrow 8:59am & due before: tomorrow 12pm'
+      color: charcoal
+      is_favorite: false
+      order: 74
+    - name: Plan Deadlines
+      query: '!subtask & due before: next week & !@next_action & !today & !overdue'
+      color: charcoal
+      is_favorite: false
+      order: 75
+    - name: Plan Subtasks
+      query: subtask & @next_action & !no date & !no time
+      color: charcoal
+      is_favorite: false
+      order: 76
+    - name: Overdue parent tasks without next_action label
+      query: '!subtask & !@next_action & overdue'
+      color: charcoal
+      is_favorite: false
+      order: 77
+    - name: Subtasks with due date and no next action
+      query: subtask & !@next_action & !no date
+      color: charcoal
+      is_favorite: false
+      order: 78
+    - name: Overdue tasks with next_action label
+      query: overdue & @next_action
+      color: charcoal
+      is_favorite: false
+      order: 79
+    - name: Overdue tasks without next_action label
+      query: overdue & !@next_action
+      color: charcoal
+      is_favorite: false
+      order: 80
+    - name: Recurring tasks
+      query: recurring
+      color: charcoal
+      is_favorite: false
+      order: 81
+    - name: Non-recurring tasks created this week
+      query: '(created after: -7 days) & !recurring'
+      color: charcoal
+      is_favorite: false
+      order: 82
+    - name: Non-recurring tasks created this week in Inbox
+      query: '!recurring & created after: -7 days & #Inbox'
+      color: charcoal
+      is_favorite: false
+      order: 83
+    - name: Tasks without next_action label, due date and not in Next Up-- section
+      query: '!@next_action & !no date & !/Next Up--'
+      color: charcoal
+      is_favorite: false
+      order: 84
+    - name: Next Actions due or overdue in 2 days
+      query: (/Next Actions=-) & (overdue |  1 days | no date) & !subtask
+      color: charcoal
+      is_favorite: false
+      order: 85
+    - name: Today's parent tasks without next_action label or due date
+      query: 'created: today & !subtask & !@next_action & no date'
+      color: charcoal
+      is_favorite: false
+      order: 86
+    - name: Today's subtasks with next_action label without due date
+      query: 'subtask & created: today & @next_action & no date & no time'
+      color: charcoal
+      is_favorite: false
+      order: 87
+    - name: Overdue tasks
+      query: overdue
+      color: charcoal
+      is_favorite: false
+      order: 88
+    - name: Today's inbox tasks without due date/time
+      query: '#Inbox & created: today & no date & no time'
+      color: charcoal
+      is_favorite: false
+      order: 89
+    - name: Tasks with ProjectFocused and context/work labels
+      query: '@ProjectFocused & @context/work'
+      color: charcoal
+      is_favorite: false
+      order: 90
+    - name: Project focused home
+      query: '@ProjectFocused & @context/home'
+      color: charcoal
+      is_favorite: false
+      order: 91
+    - name: Project focused Side
+      query: '@ProjectFocused & @context/side'
+      color: charcoal
+      is_favorite: false
+      order: 92
+    - name: Project and context focus
+      query: '@ProjectFocused & @Focused'
+      color: charcoal
+      is_favorite: false
+      order: 93
+    - name: Next action and work context tasks
+      query: '@next_action & @context/work & overdue'
+      color: charcoal
+      is_favorite: false
+      order: 94
+    - name: Next action tasks in context/side
+      query: '@next_action & @context/side & overdue'
+      color: charcoal
+      is_favorite: false
+      order: 95
+    - name: Overdue next action tasks with context
+      query: (@next_action & @context/side | @context/work) & overdue & !no date
+      color: charcoal
+      is_favorite: false
+      order: 96
+    - name: Parent tasks with due date/time, no next_action label
+      query: '!subtask & !@next_action & !no date'
+      color: charcoal
+      is_favorite: false
+      order: 97
+    - name: Next action or today's due/overdue tasks
+      query: '@next_action | (created: today & (today | overdue))'
+      color: charcoal
+      is_favorite: false
+      order: 98
+    - name: Today's next action tasks
+      query: (today & !overdue) & @next_action
+      color: charcoal
+      is_favorite: false
+      order: 99
+    - name: Tasks created in the last day
+      query: 'created after: -1 days'
+      color: charcoal
+      is_favorite: false
+      order: 100
+    - name: Next action tasks
+      query: '@next_action'
+      color: charcoal
+      is_favorite: false
+      order: 101
+    - name: Next action tasks due today or overdue
+      query: '@next_action & (overdue | today)'
+      color: charcoal
+      is_favorite: false
+      order: 102
+    - name: Tasks created in last 8 hours
+      query: 'created after: -8 hours'
+      color: charcoal
+      is_favorite: false
+      order: 103
+    - name: Tasks in Next Actions =- section
+      query: /Next Actions=-
+      color: charcoal
+      is_favorite: false
+      order: 104
+    - name: Next action tasks not in a section
+      query: '!/*'
+      color: charcoal
+      is_favorite: false
+      order: 105
+    - name: Tasks not in a section or in the inbox
+      query: '!/* & #Inbox'
+      color: charcoal
+      is_favorite: false
+      order: 106
+    - name: Triage
+      query: '!/* & ##Triage'
+      color: charcoal
+      is_favorite: false
+      order: 107
+    - name: Tasks without subtasks
+      query: '!subtask'
+      color: charcoal
+      is_favorite: false
+      order: 108
+    - name: Recent parent tasks or no due date
+      query: '!subtask & created after: -10 days & (3 days | no date)'
+      color: charcoal
+      is_favorite: false
+      order: 109
+    - name: Today's or overdue tasks
+      query: overdue
+      color: charcoal
+      is_favorite: false
+      order: 110
+    - name: Overdue
+      query: overdue
+      color: charcoal
+      is_favorite: false
+      order: 111
+    - name: Recurring tasks in Life workspace
+      query: "(\n  recurring \n  & \n  (\n    (!no time & ((overdue) | (due today & (!due after: +20 min))))\n    | \n    (subtask & due today & !no time & (overdue | !due after: +20 min))\n  )\n)"
+      color: charcoal
+      is_favorite: false
+      order: 112
+    - name: Focused Filter
+      query: '@Focused'
+      color: charcoal
+      is_favorite: false
+      order: 113
+    - name: Recurring Subtasks in Life workspace
+      query: 'recurring & subtask & workspace: Life'
+      color: magenta
+      is_favorite: false
+      order: 114
+    - name: Recurring tasks with due date, no time
+      query: recurring & no time & !no date
+      color: charcoal
+      is_favorite: false
+      order: 115
+    - name: All Recurring tasks without due date
+      query: 'workspace: Life & no date'
+      color: charcoal
+      is_favorite: false
+      order: 116
+    - name: Recurring parent tasks in Life workspace
+      query: 'recurring & !subtask & workspace: Life'
+      color: charcoal
+      is_favorite: false
+      order: 117
+    - name: "Parent tasks with \U0001F503 in name"
+      query: "!subtask & search: \U0001F503"
+      color: charcoal
+      is_favorite: false
+      order: 118
+    - name: Tasks with ⏳ in name
+      query: 'search: ⏳'
+      color: charcoal
+      is_favorite: false
+      order: 119
+    - name: Recurring tasks
+      query: recurring
+      color: charcoal
+      is_favorite: false
+      order: 120
