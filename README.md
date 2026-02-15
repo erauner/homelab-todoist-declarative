@@ -1,97 +1,171 @@
-# homelab-todoist-declarative
+# homelab-todoist-declarative (htd)
 
-Declarative (GitOps-style) Todoist configuration management.
+Declarative (GitOps-style) Todoist configuration reconciler.
 
-## Intent
-
-Codify the non-ad-hoc parts of a Todoist setup (projects, sections, labels, and saved filters) in a repo,
-then reconcile Todoist to match the desired state with a deterministic, idempotent tool.
-
-This is explicitly **not** for day-to-day task CRUD. It is for keeping structure and conventions stable.
-
-## Why Not Terraform/Provider-Restapi
-
-Todoist’s “saved filters” live in the Sync API as command-style mutations (add/update/delete/reorder) rather
-than classic CRUD endpoints. A purpose-built reconciler is a better fit than forcing this into a generic
-REST provider model.
-
-## MVP Scope
-
-- Manage **Projects** (name, parent, color, favorite, order where feasible).
-- Manage **Sections** within projects.
-- Manage **Labels** (name, color, favorite, order).
-- Manage **Saved Filters** (name, query, color, favorite, order).
-- Support `plan` (diff), `apply`, and `import` (bootstrap desired state from an existing Todoist).
-
-Non-goals for MVP:
-
-- Managing individual tasks.
-- Complex conflict resolution across multiple human editors beyond “last apply wins”.
-- Perfect drift detection for every field if the API doesn’t expose it cleanly.
-
-## Design (High Level)
-
-### Desired State
-
-Single source of truth file, e.g. `todoist.yaml`:
-
-- `projects`: stable keys, nested hierarchy
-- `sections`: under projects
-- `labels`
-- `filters` (saved filters)
-
-### State / ID Mapping
-
-Todoist objects have server IDs. We will maintain a local state file (e.g. `.todoist-state.json`) that maps
-stable logical keys (like `projects.work.name`) to Todoist IDs to make reconciliation reliable even if names
-are edited.
-
-### APIs Used
-
-- REST API for projects/sections/labels where available.
-- Sync API commands for saved filters and ordering.
-
-### Reconciliation Strategy
-
-1. Load desired config.
-2. Load state (if present).
-3. Fetch remote snapshot (projects/sections/labels/filters).
-4. Compute diff:
-   - creates, updates, deletes, reorders
-5. Apply in dependency order:
-   - projects (parents first)
-   - sections
-   - labels
-   - filters
-6. Write updated state.
-
-## CLI (Planned)
-
-```bash
-todoist-decl validate -f todoist.yaml
-todoist-decl plan -f todoist.yaml
-todoist-decl apply -f todoist.yaml
-todoist-decl import --out todoist.yaml
-```
-
-Auth:
-
-- `TODOIST_API_TOKEN` env var, or
-- `~/.config/todoist/config.json` with `{ "token": "..." }`
-
-## Initial Implementation Plan
-
-1. Define YAML schema + stable keying strategy.
-2. Implement Todoist clients:
-   - REST client (requests)
-   - Sync client (command batching)
-3. Implement `import` for a first usable bootstrapping flow.
-4. Implement diff engine + `plan` output.
-5. Implement `apply` with safe ordering + state updates.
-6. Add unit tests with mocked HTTP.
+This tool is intentionally **not** for day-to-day task CRUD. It manages the *non-ad-hoc* structure of a Todoist setup (projects, labels, saved filters) from YAML committed to git, using reconciliation semantics (plan/apply) similar to Terraform or Kubernetes.
 
 ## Status
 
-Scaffold only. Implementation intentionally deferred until we settle the desired schema and reconciliation
-rules.
+MVP implemented:
+
+- Projects (name identity, color/favorite/view_style + parent relationship)
+- Labels (name identity, color/favorite)
+- Saved Filters (name identity, query/color/favorite/order) via `/sync` commands
+
+Sections and reminders are deferred.
+
+## CLI
+
+Binary name: `htd`.
+
+```bash
+# Show what would change (no mutations)
+htd plan -f todoist.yaml
+
+# Apply with confirmation
+htd apply -f todoist.yaml
+
+# Apply non-interactively
+htd apply -f todoist.yaml --yes
+
+# JSON output (plan or apply)
+htd plan -f todoist.yaml --json
+```
+
+Exit codes:
+
+- `0`: success / no changes
+- `2`: plan has changes (plan mode)
+- non-zero: error (including aborted apply)
+
+### Deletions (prune)
+
+Deletes are **disabled by default**.
+
+To enable deletions you must provide *both*:
+
+1) CLI flag: `--prune`
+2) Config gate: `spec.prune.<kind>: true`
+
+Supported prune gates:
+
+- `spec.prune.projects`
+- `spec.prune.labels`
+- `spec.prune.filters`
+
+## Authentication / Token Discovery
+
+Token discovery follows this strict convention:
+
+1) If `TODOIST_API_TOKEN` env var is set, use it.
+2) Else, fall back to `~/.config/todoist/config.json` with:
+
+```json
+{ "token": "<your token>" }
+```
+
+The token is treated as a secret and is never printed.
+
+## APIs used
+
+- Todoist **Unified API v1** for normal objects:
+  - projects
+  - labels
+- Todoist **/sync** endpoint for objects that require command mutations:
+  - filters (saved filters)
+  - project parent moves (because parent changes are exposed as a `/sync` command)
+
+## Behavior
+
+- **Safe by default:** `plan` never mutates; `apply` requires interactive confirmation unless `--yes`.
+- **Idempotent:** repeated applies with no config changes converge to “no changes”.
+- **Deterministic output:** plan operations are sorted by kind then name.
+- **HTTP timeout:** 30 seconds per request.
+- **429 handling:** retries with exponential backoff; respects `Retry-After` when present.
+- **Logging:** quiet by default; `--verbose` logs request/response status lines (never the token).
+
+## YAML schema (MVP)
+
+```yaml
+apiVersion: homelab.todoist/v1
+kind: TodoistConfig
+metadata:
+  name: personal
+spec:
+  prune:
+    projects: false
+    labels: false
+    filters: false
+
+  projects:
+    - name: Work
+      color: red
+      is_favorite: true
+      view_style: list
+
+    - name: Homelab
+      parent: Work
+      color: blue
+
+  labels:
+    - name: waiting
+      color: grey
+      is_favorite: true
+
+  filters:
+    - name: Work Focus
+      query: "(today | overdue) & #Work"
+      color: red
+      is_favorite: true
+      order: 1
+```
+
+### Identity + reconciliation rules
+
+- **Projects**
+  - Identity key: `name`
+  - Supports parent reference: `parent: <project name>`
+  - Managed fields (when present in YAML): `color`, `is_favorite`, `view_style`
+  - Parent relationship is managed (omitting `parent` means *root*)
+  - Deletion requires `--prune` and `spec.prune.projects: true`
+
+- **Labels**
+  - Identity key: `name`
+  - Managed fields (when present in YAML): `color`, `is_favorite`
+  - Deletion requires `--prune` and `spec.prune.labels: true`
+
+- **Filters (saved filters)**
+  - Identity key: `name`
+  - Managed fields: `query`, `color`, `is_favorite`, `order`
+  - Implemented via `/sync` commands: `filter_add`, `filter_update`, `filter_delete`, `filter_update_orders`
+  - Deletion requires `--prune` and `spec.prune.filters: true`
+
+### Rename behavior (current MVP)
+
+Because identity is name-only, a “rename” is treated as:
+
+- create new object with the new name
+- (optional) delete the old object only if prune is enabled and gated
+
+## Filter examples
+
+These are valid examples of Todoist filter queries you can store in `spec.filters[*].query`:
+
+1) `(today | overdue) & #Work`
+2) `7 days & @waiting`
+3) `!assigned & shared`
+4) `created before: -365 days`
+5) `p1 & overdue, p4 & today`
+
+Note on commas: Todoist’s filter language supports comma-separated multiple queries to show multiple task lists in one filter view.
+
+## Development
+
+Requires Go 1.22+.
+
+```bash
+go test ./...
+
+go build ./cmd/htd
+```
 

@@ -10,13 +10,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building...'
+                sh 'go build ./cmd/htd'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Testing...'
+                sh 'go test ./...'
             }
         }
     }
