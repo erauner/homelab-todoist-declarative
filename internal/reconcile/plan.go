@@ -5,6 +5,8 @@ import (
 	"sort"
 
 	"github.com/erauner/homelab-todoist-declarative/internal/config"
+	"github.com/erauner/homelab-todoist-declarative/internal/todoist/sync"
+	"github.com/erauner/homelab-todoist-declarative/internal/todoist/v1"
 )
 
 type Options struct {
@@ -26,12 +28,27 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	pruneFilters := opts.Prune && cfg.Spec.Prune.Filters
 
 	// Projects
-	desiredProjects := map[string]config.ProjectSpec{}
+	desiredProjectNames := map[string]struct{}{}
+	desiredProjectIDs := map[string]struct{}{}
 	for _, p := range cfg.Spec.Projects {
-		desiredProjects[p.Name] = p
-		remote, exists, err := snap.ProjectByName(p.Name)
-		if err != nil {
-			return nil, err
+		desiredProjectNames[p.Name] = struct{}{}
+		if p.ID != nil {
+			desiredProjectIDs[*p.ID] = struct{}{}
+		}
+
+		var remote v1.Project
+		var exists bool
+		var err error
+		if p.ID != nil {
+			remote, exists = snap.ProjectByID(*p.ID)
+			if !exists {
+				return nil, fmt.Errorf("project %q references id %q which was not found", p.Name, *p.ID)
+			}
+		} else {
+			remote, exists, err = snap.ProjectByName(p.Name)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if !exists {
 			plan.Operations = append(plan.Operations, Operation{
@@ -52,6 +69,9 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 
 		// Update managed fields via Unified API v1.
 		var changes []Change
+		if p.ID != nil && remote.Name != p.Name {
+			changes = append(changes, Change{Field: "name", From: remote.Name, To: p.Name})
+		}
 		if p.Color != nil && remote.Color != *p.Color {
 			changes = append(changes, Change{Field: "color", From: remote.Color, To: *p.Color})
 		}
@@ -113,7 +133,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	}
 	if pruneProjects {
 		for _, rp := range snap.Projects {
-			if _, ok := desiredProjects[rp.Name]; ok {
+			if _, ok := desiredProjectIDs[rp.ID]; ok {
+				continue
+			}
+			if _, ok := desiredProjectNames[rp.Name]; ok {
 				continue
 			}
 			if rp.InboxProject {
@@ -132,7 +155,13 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		// Informational note: unmanaged remote projects.
 		var extras int
 		for _, rp := range snap.Projects {
-			if _, ok := desiredProjects[rp.Name]; !ok {
+			if _, ok := desiredProjectIDs[rp.ID]; ok {
+				continue
+			}
+			if _, ok := desiredProjectNames[rp.Name]; ok {
+				continue
+			}
+			{
 				extras++
 			}
 		}
@@ -142,12 +171,27 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	}
 
 	// Labels
-	desiredLabels := map[string]config.LabelSpec{}
+	desiredLabelNames := map[string]struct{}{}
+	desiredLabelIDs := map[string]struct{}{}
 	for _, l := range cfg.Spec.Labels {
-		desiredLabels[l.Name] = l
-		remote, exists, err := snap.LabelByName(l.Name)
-		if err != nil {
-			return nil, err
+		desiredLabelNames[l.Name] = struct{}{}
+		if l.ID != nil {
+			desiredLabelIDs[*l.ID] = struct{}{}
+		}
+
+		var remote v1.Label
+		var exists bool
+		var err error
+		if l.ID != nil {
+			remote, exists = snap.LabelByID(*l.ID)
+			if !exists {
+				return nil, fmt.Errorf("label %q references id %q which was not found", l.Name, *l.ID)
+			}
+		} else {
+			remote, exists, err = snap.LabelByName(l.Name)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if !exists {
 			plan.Operations = append(plan.Operations, Operation{
@@ -164,6 +208,9 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 			continue
 		}
 		var changes []Change
+		if l.ID != nil && remote.Name != l.Name {
+			changes = append(changes, Change{Field: "name", From: remote.Name, To: l.Name})
+		}
 		if l.Color != nil && remote.Color != *l.Color {
 			changes = append(changes, Change{Field: "color", From: remote.Color, To: *l.Color})
 		}
@@ -191,7 +238,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	}
 	if pruneLabels {
 		for _, rl := range snap.Labels {
-			if _, ok := desiredLabels[rl.Name]; ok {
+			if _, ok := desiredLabelIDs[rl.ID]; ok {
+				continue
+			}
+			if _, ok := desiredLabelNames[rl.Name]; ok {
 				continue
 			}
 			plan.Operations = append(plan.Operations, Operation{
@@ -205,7 +255,13 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	} else {
 		var extras int
 		for _, rl := range snap.Labels {
-			if _, ok := desiredLabels[rl.Name]; !ok {
+			if _, ok := desiredLabelIDs[rl.ID]; ok {
+				continue
+			}
+			if _, ok := desiredLabelNames[rl.Name]; ok {
+				continue
+			}
+			{
 				extras++
 			}
 		}
@@ -215,12 +271,27 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	}
 
 	// Filters
-	desiredFilters := map[string]config.FilterSpec{}
+	desiredFilterNames := map[string]struct{}{}
+	desiredFilterIDs := map[string]struct{}{}
 	for _, f := range cfg.Spec.Filters {
-		desiredFilters[f.Name] = f
-		remote, exists, err := snap.FilterByName(f.Name)
-		if err != nil {
-			return nil, err
+		desiredFilterNames[f.Name] = struct{}{}
+		if f.ID != nil {
+			desiredFilterIDs[*f.ID] = struct{}{}
+		}
+
+		var remote sync.Filter
+		var exists bool
+		var err error
+		if f.ID != nil {
+			remote, exists = snap.FilterByID(*f.ID)
+			if !exists {
+				return nil, fmt.Errorf("filter %q references id %q which was not found", f.Name, *f.ID)
+			}
+		} else {
+			remote, exists, err = snap.FilterByName(f.Name)
+			if err != nil {
+				return nil, err
+			}
 		}
 		ord := 0
 		if f.Order != nil {
@@ -243,6 +314,9 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 			continue
 		}
 		var changes []Change
+		if f.ID != nil && remote.Name != f.Name {
+			changes = append(changes, Change{Field: "name", From: remote.Name, To: f.Name})
+		}
 		if remote.Query != f.Query {
 			changes = append(changes, Change{Field: "query", From: remote.Query, To: f.Query})
 		}
@@ -279,7 +353,10 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	}
 	if pruneFilters {
 		for _, rf := range snap.Filters {
-			if _, ok := desiredFilters[rf.Name]; ok {
+			if _, ok := desiredFilterIDs[rf.ID]; ok {
+				continue
+			}
+			if _, ok := desiredFilterNames[rf.Name]; ok {
 				continue
 			}
 			plan.Operations = append(plan.Operations, Operation{
@@ -294,7 +371,13 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	} else {
 		var extras int
 		for _, rf := range snap.Filters {
-			if _, ok := desiredFilters[rf.Name]; !ok {
+			if _, ok := desiredFilterIDs[rf.ID]; ok {
+				continue
+			}
+			if _, ok := desiredFilterNames[rf.Name]; ok {
+				continue
+			}
+			{
 				extras++
 			}
 		}

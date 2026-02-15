@@ -12,12 +12,28 @@ import (
 )
 
 type Client struct {
-	http *todoisthttp.Client
+	http               *todoisthttp.Client
+	maxCommandsPerSync int
 }
 
-func New(http *todoisthttp.Client) *Client { return &Client{http: http} }
+type Option func(*Client)
 
-const maxCommandsPerSync = 100
+func WithMaxCommandsPerSync(n int) Option {
+	return func(c *Client) {
+		if n <= 0 {
+			return
+		}
+		c.maxCommandsPerSync = n
+	}
+}
+
+func New(http *todoisthttp.Client, opts ...Option) *Client {
+	c := &Client{http: http, maxCommandsPerSync: 100}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
 
 // Command represents a /sync command.
 // See: https://developer.todoist.com/api/v1/ ("/sync" section).
@@ -88,13 +104,13 @@ func (c *Client) Read(ctx context.Context, resourceTypes []string) (*SyncRespons
 func (c *Client) RunCommands(ctx context.Context, commands []Command) (*SyncResponse, error) {
 	// Todoist limits commands per sync operation (currently 100). Split for callers so higher
 	// level apply logic doesn't need to care about this transport detail.
-	if len(commands) > maxCommandsPerSync {
+	if c.maxCommandsPerSync > 0 && len(commands) > c.maxCommandsPerSync {
 		var merged SyncResponse
 		merged.SyncStatus = map[string]any{}
 		merged.TempIDMapping = map[string]string{}
 
-		for start := 0; start < len(commands); start += maxCommandsPerSync {
-			end := start + maxCommandsPerSync
+		for start := 0; start < len(commands); start += c.maxCommandsPerSync {
+			end := start + c.maxCommandsPerSync
 			if end > len(commands) {
 				end = len(commands)
 			}

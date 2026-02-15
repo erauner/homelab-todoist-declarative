@@ -13,6 +13,7 @@ import (
 type Options struct {
 	Full         bool
 	IncludeInbox bool
+	IncludeIDs   bool
 }
 
 // SimpleConfig is the preferred wire format for htd configs (no apiVersion/kind/metadata/spec envelope).
@@ -43,6 +44,7 @@ func FromSnapshot(name string, snap *reconcile.Snapshot, opts Options) (*SimpleC
 
 	// Projects: output in parent-before-child order for readability.
 	type proj struct {
+		id        string
 		name      string
 		parent    *string
 		color     string
@@ -66,6 +68,7 @@ func FromSnapshot(name string, snap *reconcile.Snapshot, opts Options) (*SimpleC
 		}
 		parentByName[p.Name] = parentName
 		projs = append(projs, proj{
+			id:        p.ID,
 			name:      p.Name,
 			parent:    parentName,
 			color:     p.Color,
@@ -108,6 +111,10 @@ func FromSnapshot(name string, snap *reconcile.Snapshot, opts Options) (*SimpleC
 			Name:   p.name,
 			Parent: p.parent,
 		}
+		if opts.IncludeIDs {
+			id := p.id
+			ps.ID = &id
+		}
 		if opts.Full {
 			if p.color != "" {
 				v := p.color
@@ -127,6 +134,10 @@ func FromSnapshot(name string, snap *reconcile.Snapshot, opts Options) (*SimpleC
 	sort.Slice(snap.Labels, func(i, j int) bool { return snap.Labels[i].Name < snap.Labels[j].Name })
 	for _, l := range snap.Labels {
 		ls := config.LabelSpec{Name: l.Name}
+		if opts.IncludeIDs {
+			id := l.ID
+			ls.ID = &id
+		}
 		if opts.Full {
 			if l.Color != "" {
 				v := l.Color
@@ -151,6 +162,10 @@ func FromSnapshot(name string, snap *reconcile.Snapshot, opts Options) (*SimpleC
 			Name:  f.Name,
 			Query: f.Query,
 			Order: &ord,
+		}
+		if opts.IncludeIDs {
+			id := f.ID
+			fs.ID = &id
 		}
 		if opts.Full {
 			if f.Color != "" {

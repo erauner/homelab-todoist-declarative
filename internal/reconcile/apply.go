@@ -77,6 +77,9 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		req := v1.UpdateProjectRequest{}
 		for _, ch := range op.Changes {
 			switch ch.Field {
+			case "name":
+				n := payload.DesiredName
+				req.Name = &n
 			case "color":
 				req.Color = payload.Color
 			case "is_favorite":
@@ -155,6 +158,9 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		req := v1.UpdateLabelRequest{}
 		for _, ch := range op.Changes {
 			switch ch.Field {
+			case "name":
+				n := payload.DesiredName
+				req.Name = &n
 			case "color":
 				req.Color = payload.Color
 			case "is_favorite":
@@ -212,6 +218,8 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		args := map[string]any{"id": payload.RemoteID}
 		for _, ch := range op.Changes {
 			switch ch.Field {
+			case "name":
+				args["name"] = payload.DesiredName
 			case "query":
 				args["query"] = payload.Query
 			case "color":
@@ -286,9 +294,15 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 	if needFilterOrderUpdate && len(cfg.Spec.Filters) > 0 {
 		idOrder := map[string]int{}
 		for _, f := range cfg.Spec.Filters {
-			id, ok := filterNameToID[f.Name]
-			if !ok {
-				return nil, fmt.Errorf("filter %q id missing after create/update", f.Name)
+			id := ""
+			if f.ID != nil {
+				id = *f.ID
+			} else {
+				var ok bool
+				id, ok = filterNameToID[f.Name]
+				if !ok {
+					return nil, fmt.Errorf("filter %q id missing after create/update", f.Name)
+				}
 			}
 			ord := 0
 			if f.Order != nil {

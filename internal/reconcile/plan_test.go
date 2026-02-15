@@ -83,6 +83,56 @@ func TestBuildPlan_CreateUpdateNoop(t *testing.T) {
 	}
 }
 
+func TestBuildPlan_ProjectID_DisambiguatesDuplicateName(t *testing.T) {
+	cfg := &config.TodoistConfig{
+		Metadata: config.Metadata{Name: "test"},
+		Spec: config.Spec{
+			Projects: []config.ProjectSpec{
+				{ID: strPtr("P1"), Name: "Renamed", Color: strPtr("red")},
+			},
+		},
+	}
+	cfg.Normalize()
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	p1 := v1.Project{ID: "P1", Name: "Dup", Color: "blue", IsFavorite: false, ViewStyle: "list", ParentID: nil, InboxProject: false}
+	p2 := v1.Project{ID: "P2", Name: "Dup", Color: "blue", IsFavorite: false, ViewStyle: "list", ParentID: nil, InboxProject: false}
+	snap := &Snapshot{
+		Projects:        []v1.Project{p1, p2},
+		Labels:          nil,
+		Filters:         nil,
+		projectByName:   map[string][]v1.Project{"Dup": {p1, p2}},
+		projectByID:     map[string]v1.Project{"P1": p1, "P2": p2},
+		labelByName:     map[string][]v1.Label{},
+		labelByID:       map[string]v1.Label{},
+		filterByName:    map[string][]sync.Filter{},
+		filterByID:      map[string]sync.Filter{},
+		projectNameByID: map[string]string{"P1": "Dup", "P2": "Dup"},
+	}
+
+	plan, err := BuildPlan(cfg, snap, Options{Prune: false})
+	if err != nil {
+		t.Fatalf("BuildPlan: %v", err)
+	}
+	if plan.Summary.Update != 1 {
+		t.Fatalf("expected 1 update, got %d", plan.Summary.Update)
+	}
+	found := false
+	for _, op := range plan.Operations {
+		if op.Kind == KindProject && op.Action == ActionUpdate && op.ID == "P1" && op.Name == "Renamed" {
+			found = true
+			if len(op.Changes) != 2 {
+				t.Fatalf("expected 2 changes (name,color), got %#v", op.Changes)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected project update op for P1")
+	}
+}
+
 func strPtr(s string) *string { return &s }
 func boolPtr(b bool) *bool    { return &b }
 func intPtr(i int) *int       { return &i }

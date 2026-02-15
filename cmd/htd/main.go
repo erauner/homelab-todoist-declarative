@@ -52,11 +52,12 @@ func (e ExitCodeError) Error() string {
 
 func newRootCmd() *cobra.Command {
 	var (
-		file    string
-		jsonOut bool
-		prune   bool
-		verbose bool
-		yes     bool
+		file          string
+		jsonOut       bool
+		prune         bool
+		verbose       bool
+		yes           bool
+		syncBatchSize int
 	)
 
 	root := &cobra.Command{
@@ -70,10 +71,13 @@ func newRootCmd() *cobra.Command {
 	root.PersistentFlags().BoolVar(&jsonOut, "json", false, "output JSON")
 	root.PersistentFlags().BoolVar(&prune, "prune", false, "allow deletions (also gated by spec.prune.*)")
 	root.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose debug logging")
+	root.PersistentFlags().IntVar(&syncBatchSize, "sync-batch-size", 100, "max /sync commands per request (Todoist limit is 100)")
 
 	var exportFull bool
 	var exportName string
 	var exportIncludeInbox bool
+	var exportIDs bool
+	var exportOnly []string
 	exportCmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export current Todoist configuration to YAML",
@@ -95,7 +99,7 @@ func newRootCmd() *cobra.Command {
 				todoisthttp.WithLogger(logger),
 			)
 			v1c := v1.New(httpClient)
-			syncC := sync.New(httpClient)
+			syncC := sync.New(httpClient, sync.WithMaxCommandsPerSync(syncBatchSize))
 
 			snap, err := reconcile.FetchSnapshot(ctx, v1c, syncC)
 			if err != nil {
@@ -106,9 +110,35 @@ func newRootCmd() *cobra.Command {
 			if strings.TrimSpace(name) == "" {
 				name = "export"
 			}
-			cfg, err := export.FromSnapshot(name, snap, export.Options{Full: exportFull, IncludeInbox: exportIncludeInbox})
+			cfg, err := export.FromSnapshot(name, snap, export.Options{Full: exportFull, IncludeInbox: exportIncludeInbox, IncludeIDs: exportIDs})
 			if err != nil {
 				return err
+			}
+
+			includeProjects, includeLabels, includeFilters := true, true, true
+			if len(exportOnly) > 0 {
+				includeProjects, includeLabels, includeFilters = false, false, false
+				for _, v := range exportOnly {
+					switch strings.ToLower(strings.TrimSpace(v)) {
+					case "projects":
+						includeProjects = true
+					case "labels":
+						includeLabels = true
+					case "filters":
+						includeFilters = true
+					default:
+						return fmt.Errorf("invalid --only value %q (expected projects, labels, filters)", v)
+					}
+				}
+			}
+			if !includeProjects {
+				cfg.Projects = nil
+			}
+			if !includeLabels {
+				cfg.Labels = nil
+			}
+			if !includeFilters {
+				cfg.Filters = nil
 			}
 
 			if jsonOut {
@@ -131,6 +161,8 @@ func newRootCmd() *cobra.Command {
 	exportCmd.Flags().BoolVar(&exportFull, "full", false, "include managed fields (color/is_favorite/view_style)")
 	exportCmd.Flags().StringVar(&exportName, "name", "export", "config name for exported YAML")
 	exportCmd.Flags().BoolVar(&exportIncludeInbox, "include-inbox", false, "include inbox project in exported YAML")
+	exportCmd.Flags().BoolVar(&exportIDs, "ids", false, "include stable remote IDs (helps disambiguate duplicates)")
+	exportCmd.Flags().StringSliceVar(&exportOnly, "only", nil, "export only these kinds: projects,labels,filters")
 
 	validateCmd := &cobra.Command{
 		Use:   "validate",
@@ -177,7 +209,7 @@ func newRootCmd() *cobra.Command {
 				todoisthttp.WithLogger(logger),
 			)
 			v1c := v1.New(httpClient)
-			syncC := sync.New(httpClient)
+			syncC := sync.New(httpClient, sync.WithMaxCommandsPerSync(syncBatchSize))
 
 			snap, err := reconcile.FetchSnapshot(ctx, v1c, syncC)
 			if err != nil {
@@ -221,7 +253,7 @@ func newRootCmd() *cobra.Command {
 				todoisthttp.WithLogger(logger),
 			)
 			v1c := v1.New(httpClient)
-			syncC := sync.New(httpClient)
+			syncC := sync.New(httpClient, sync.WithMaxCommandsPerSync(syncBatchSize))
 
 			snap, err := reconcile.FetchSnapshot(ctx, v1c, syncC)
 			if err != nil {

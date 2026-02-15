@@ -16,8 +16,11 @@ type Snapshot struct {
 	Filters  []sync.Filter
 
 	projectByName   map[string][]v1.Project
+	projectByID     map[string]v1.Project
 	labelByName     map[string][]v1.Label
+	labelByID       map[string]v1.Label
 	filterByName    map[string][]sync.Filter
+	filterByID      map[string]sync.Filter
 	projectNameByID map[string]string
 }
 
@@ -47,19 +50,34 @@ func FetchSnapshot(ctx context.Context, v1c *v1.Client, syncc *sync.Client) (*Sn
 		Labels:          labels,
 		Filters:         filters,
 		projectByName:   map[string][]v1.Project{},
+		projectByID:     map[string]v1.Project{},
 		labelByName:     map[string][]v1.Label{},
+		labelByID:       map[string]v1.Label{},
 		filterByName:    map[string][]sync.Filter{},
+		filterByID:      map[string]sync.Filter{},
 		projectNameByID: map[string]string{},
 	}
 
 	for _, p := range projects {
+		if _, ok := s.projectByID[p.ID]; ok {
+			return nil, fmt.Errorf("remote has duplicate project id %q", p.ID)
+		}
+		s.projectByID[p.ID] = p
 		s.projectNameByID[p.ID] = p.Name
 		s.projectByName[p.Name] = append(s.projectByName[p.Name], p)
 	}
 	for _, l := range labels {
+		if _, ok := s.labelByID[l.ID]; ok {
+			return nil, fmt.Errorf("remote has duplicate label id %q", l.ID)
+		}
+		s.labelByID[l.ID] = l
 		s.labelByName[l.Name] = append(s.labelByName[l.Name], l)
 	}
 	for _, f := range filters {
+		if _, ok := s.filterByID[f.ID]; ok {
+			return nil, fmt.Errorf("remote has duplicate filter id %q", f.ID)
+		}
+		s.filterByID[f.ID] = f
 		s.filterByName[f.Name] = append(s.filterByName[f.Name], f)
 	}
 
@@ -88,6 +106,11 @@ func (s *Snapshot) ProjectByName(name string) (v1.Project, bool, error) {
 	}
 }
 
+func (s *Snapshot) ProjectByID(id string) (v1.Project, bool) {
+	p, ok := s.projectByID[id]
+	return p, ok
+}
+
 func (s *Snapshot) LabelByName(name string) (v1.Label, bool, error) {
 	ls := s.labelByName[name]
 	switch len(ls) {
@@ -105,6 +128,11 @@ func (s *Snapshot) LabelByName(name string) (v1.Label, bool, error) {
 	}
 }
 
+func (s *Snapshot) LabelByID(id string) (v1.Label, bool) {
+	l, ok := s.labelByID[id]
+	return l, ok
+}
+
 func (s *Snapshot) FilterByName(name string) (sync.Filter, bool, error) {
 	fs := s.filterByName[name]
 	switch len(fs) {
@@ -120,6 +148,11 @@ func (s *Snapshot) FilterByName(name string) (sync.Filter, bool, error) {
 		sort.Strings(ids)
 		return sync.Filter{}, false, fmt.Errorf("remote has %d filters named %q (ids: %s); cannot reconcile by name", len(fs), name, strings.Join(ids, ", "))
 	}
+}
+
+func (s *Snapshot) FilterByID(id string) (sync.Filter, bool) {
+	f, ok := s.filterByID[id]
+	return f, ok
 }
 
 func (s *Snapshot) ProjectNameByID(id string) (string, bool) {

@@ -41,6 +41,7 @@ type PruneSpec struct {
 }
 
 type ProjectSpec struct {
+	ID         *string `yaml:"id,omitempty"`
 	Name       string  `yaml:"name"`
 	Parent     *string `yaml:"parent,omitempty"`
 	Color      *string `yaml:"color,omitempty"`
@@ -49,12 +50,14 @@ type ProjectSpec struct {
 }
 
 type LabelSpec struct {
+	ID         *string `yaml:"id,omitempty"`
 	Name       string  `yaml:"name"`
 	Color      *string `yaml:"color,omitempty"`
 	IsFavorite *bool   `yaml:"is_favorite,omitempty"`
 }
 
 type FilterSpec struct {
+	ID         *string `yaml:"id,omitempty"`
 	Name       string  `yaml:"name"`
 	Query      string  `yaml:"query"`
 	Color      *string `yaml:"color,omitempty"`
@@ -123,6 +126,10 @@ func (c *TodoistConfig) Normalize() {
 	// Normalize names/queries. We do *not* lowercase; identity keys are case-sensitive.
 	for i := range c.Spec.Projects {
 		c.Spec.Projects[i].Name = strings.TrimSpace(c.Spec.Projects[i].Name)
+		if c.Spec.Projects[i].ID != nil {
+			id := strings.TrimSpace(*c.Spec.Projects[i].ID)
+			c.Spec.Projects[i].ID = &id
+		}
 		if c.Spec.Projects[i].Parent != nil {
 			p := strings.TrimSpace(*c.Spec.Projects[i].Parent)
 			c.Spec.Projects[i].Parent = &p
@@ -138,6 +145,10 @@ func (c *TodoistConfig) Normalize() {
 	}
 	for i := range c.Spec.Labels {
 		c.Spec.Labels[i].Name = strings.TrimSpace(c.Spec.Labels[i].Name)
+		if c.Spec.Labels[i].ID != nil {
+			id := strings.TrimSpace(*c.Spec.Labels[i].ID)
+			c.Spec.Labels[i].ID = &id
+		}
 		if c.Spec.Labels[i].Color != nil {
 			col := strings.TrimSpace(*c.Spec.Labels[i].Color)
 			c.Spec.Labels[i].Color = &col
@@ -146,6 +157,10 @@ func (c *TodoistConfig) Normalize() {
 	for i := range c.Spec.Filters {
 		c.Spec.Filters[i].Name = strings.TrimSpace(c.Spec.Filters[i].Name)
 		c.Spec.Filters[i].Query = strings.TrimSpace(c.Spec.Filters[i].Query)
+		if c.Spec.Filters[i].ID != nil {
+			id := strings.TrimSpace(*c.Spec.Filters[i].ID)
+			c.Spec.Filters[i].ID = &id
+		}
 		if c.Spec.Filters[i].Color != nil {
 			col := strings.TrimSpace(*c.Spec.Filters[i].Color)
 			c.Spec.Filters[i].Color = &col
@@ -173,6 +188,7 @@ func (c *TodoistConfig) Validate() error {
 
 	// Projects: names unique + parents exist + no cycles.
 	projectNames := make(map[string]struct{}, len(c.Spec.Projects))
+	projectIDs := make(map[string]struct{}, len(c.Spec.Projects))
 	for i, p := range c.Spec.Projects {
 		if p.Name == "" {
 			errs = append(errs, fmt.Errorf("spec.projects[%d].name is required", i))
@@ -182,6 +198,15 @@ func (c *TodoistConfig) Validate() error {
 			errs = append(errs, fmt.Errorf("duplicate project name %q", p.Name))
 		} else {
 			projectNames[p.Name] = struct{}{}
+		}
+		if p.ID != nil {
+			if *p.ID == "" {
+				errs = append(errs, fmt.Errorf("spec.projects[%d] (%q).id cannot be empty", i, p.Name))
+			} else if _, ok := projectIDs[*p.ID]; ok {
+				errs = append(errs, fmt.Errorf("duplicate project id %q", *p.ID))
+			} else {
+				projectIDs[*p.ID] = struct{}{}
+			}
 		}
 		if p.Parent != nil {
 			if *p.Parent == "" {
@@ -204,6 +229,7 @@ func (c *TodoistConfig) Validate() error {
 
 	// Labels: names unique.
 	labelNames := make(map[string]struct{}, len(c.Spec.Labels))
+	labelIDs := make(map[string]struct{}, len(c.Spec.Labels))
 	for i, l := range c.Spec.Labels {
 		if l.Name == "" {
 			errs = append(errs, fmt.Errorf("spec.labels[%d].name is required", i))
@@ -214,10 +240,20 @@ func (c *TodoistConfig) Validate() error {
 		} else {
 			labelNames[l.Name] = struct{}{}
 		}
+		if l.ID != nil {
+			if *l.ID == "" {
+				errs = append(errs, fmt.Errorf("spec.labels[%d] (%q).id cannot be empty", i, l.Name))
+			} else if _, ok := labelIDs[*l.ID]; ok {
+				errs = append(errs, fmt.Errorf("duplicate label id %q", *l.ID))
+			} else {
+				labelIDs[*l.ID] = struct{}{}
+			}
+		}
 	}
 
 	// Filters: names unique, query required, order positive.
 	filterNames := make(map[string]struct{}, len(c.Spec.Filters))
+	filterIDs := make(map[string]struct{}, len(c.Spec.Filters))
 	for i, f := range c.Spec.Filters {
 		if f.Name == "" {
 			errs = append(errs, fmt.Errorf("spec.filters[%d].name is required", i))
@@ -227,6 +263,15 @@ func (c *TodoistConfig) Validate() error {
 			errs = append(errs, fmt.Errorf("duplicate filter name %q", f.Name))
 		} else {
 			filterNames[f.Name] = struct{}{}
+		}
+		if f.ID != nil {
+			if *f.ID == "" {
+				errs = append(errs, fmt.Errorf("spec.filters[%d] (%q).id cannot be empty", i, f.Name))
+			} else if _, ok := filterIDs[*f.ID]; ok {
+				errs = append(errs, fmt.Errorf("duplicate filter id %q", *f.ID))
+			} else {
+				filterIDs[*f.ID] = struct{}{}
+			}
 		}
 		if f.Query == "" {
 			errs = append(errs, fmt.Errorf("spec.filters[%d] (%q).query is required", i, f.Name))
