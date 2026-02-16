@@ -26,6 +26,7 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 	pruneProjects := opts.Prune && cfg.Spec.Prune.Projects
 	pruneLabels := opts.Prune && cfg.Spec.Prune.Labels
 	pruneFilters := opts.Prune && cfg.Spec.Prune.Filters
+	pruneTasks := opts.Prune && cfg.Spec.Prune.Tasks
 
 	// Projects
 	desiredProjectNames := map[string]struct{}{}
@@ -386,6 +387,166 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 	}
 
+	// Tasks (managed templates only; identity by id or key)
+	desiredTaskIDs := map[string]struct{}{}
+	desiredTaskKeys := map[string]struct{}{}
+	for _, t := range cfg.Spec.Tasks {
+		if t.ID != nil {
+			desiredTaskIDs[*t.ID] = struct{}{}
+		}
+		if t.Key != "" {
+			desiredTaskKeys[t.Key] = struct{}{}
+		}
+
+		var remote v1.Task
+		var exists bool
+		if t.ID != nil {
+			remote, exists = snap.TaskByID(*t.ID)
+		} else {
+			remote, exists = snap.TaskByKey(t.Key)
+		}
+
+		var desiredProjectID *string
+		if t.Project != nil {
+			p, ok, err := snap.ProjectByName(*t.Project)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("task %q references unknown project %q", t.Content, *t.Project)
+			}
+			pid := p.ID
+			desiredProjectID = &pid
+		}
+
+		desiredDesc := buildManagedTaskDescription(t.Description, t.Key)
+		if !exists {
+			plan.Operations = append(plan.Operations, Operation{
+				Kind:   KindTask,
+				Action: ActionCreate,
+				Name:   t.Content,
+				TaskPayload: &TaskPayload{
+					Key:         t.Key,
+					DesiredName: t.Content,
+					Description: desiredDesc,
+					ProjectName: t.Project,
+					ProjectID:   desiredProjectID,
+					Labels:      t.Labels,
+					Priority:    t.Priority,
+					DueString:   t.Due.String,
+				},
+			})
+			plan.Summary.Create++
+			continue
+		}
+
+		var changes []Change
+		if remote.Content != t.Content {
+			changes = append(changes, Change{Field: "content", From: remote.Content, To: t.Content})
+		}
+		remoteDesc := taskDescriptionSansManagedKey(remote.Description)
+		wantDesc := ""
+		if t.Description != nil {
+			wantDesc = *t.Description
+		}
+		if remoteDesc != wantDesc {
+			changes = append(changes, Change{Field: "description", From: remoteDesc, To: wantDesc})
+		}
+		remoteProjectID := remote.ProjectID
+		wantProjectID := ""
+		if desiredProjectID != nil {
+			wantProjectID = *desiredProjectID
+		}
+		if remoteProjectID != wantProjectID {
+			changes = append(changes, Change{Field: "project", From: remoteProjectID, To: wantProjectID})
+		}
+		if !equalStringSet(remote.Labels, t.Labels) {
+			changes = append(changes, Change{Field: "labels", From: fmt.Sprintf("%v", remote.Labels), To: fmt.Sprintf("%v", t.Labels)})
+		}
+		remotePriority := remote.Priority
+		wantPriority := 0
+		if t.Priority != nil {
+			wantPriority = *t.Priority
+			if remotePriority != wantPriority {
+				changes = append(changes, Change{Field: "priority", From: fmt.Sprintf("%d", remotePriority), To: fmt.Sprintf("%d", wantPriority)})
+			}
+		}
+		remoteDueString := ""
+		if remote.Due != nil {
+			remoteDueString = remote.Due.String
+		}
+		wantDueString := ""
+		if t.Due.String != nil {
+			wantDueString = *t.Due.String
+		}
+		if remoteDueString != wantDueString {
+			changes = append(changes, Change{Field: "due.string", From: remoteDueString, To: wantDueString})
+		}
+
+		if len(changes) > 0 {
+			plan.Operations = append(plan.Operations, Operation{
+				Kind:    KindTask,
+				Action:  ActionUpdate,
+				Name:    t.Content,
+				ID:      remote.ID,
+				Changes: changes,
+				TaskPayload: &TaskPayload{
+					Key:         t.Key,
+					DesiredName: t.Content,
+					Description: desiredDesc,
+					ProjectName: t.Project,
+					ProjectID:   desiredProjectID,
+					Labels:      t.Labels,
+					Priority:    t.Priority,
+					DueString:   t.Due.String,
+				},
+			})
+			plan.Summary.Update++
+		}
+	}
+	if opts.Prune && !cfg.Spec.Prune.Tasks {
+		plan.Notes = append(plan.Notes, "--prune set but spec.prune.tasks=false; task deletions are disabled")
+	}
+	if pruneTasks {
+		for _, rt := range snap.Tasks {
+			if _, ok := desiredTaskIDs[rt.ID]; ok {
+				continue
+			}
+			key, managed := managedTaskKey(rt.Description)
+			if !managed {
+				continue
+			}
+			if _, ok := desiredTaskKeys[key]; ok {
+				continue
+			}
+			plan.Operations = append(plan.Operations, Operation{
+				Kind:   KindTask,
+				Action: ActionDelete,
+				Name:   rt.Content,
+				ID:     rt.ID,
+			})
+			plan.Summary.Delete++
+		}
+	} else {
+		var extras int
+		for _, rt := range snap.Tasks {
+			if _, ok := desiredTaskIDs[rt.ID]; ok {
+				continue
+			}
+			key, managed := managedTaskKey(rt.Description)
+			if !managed {
+				continue
+			}
+			if _, ok := desiredTaskKeys[key]; ok {
+				continue
+			}
+			extras++
+		}
+		if extras > 0 {
+			plan.Notes = append(plan.Notes, fmt.Sprintf("%d managed remote tasks are not in config (prune disabled)", extras))
+		}
+	}
+
 	// Deterministic ordering: sort by kind then name, then action.
 	sort.Slice(plan.Operations, func(i, j int) bool {
 		a, b := plan.Operations[i], plan.Operations[j]
@@ -409,6 +570,8 @@ func kindOrder(k Kind) int {
 		return 1
 	case KindFilter:
 		return 2
+	case KindTask:
+		return 3
 	default:
 		return 99
 	}

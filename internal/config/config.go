@@ -31,6 +31,7 @@ type Spec struct {
 	Projects []ProjectSpec `yaml:"projects"`
 	Labels   []LabelSpec   `yaml:"labels"`
 	Filters  []FilterSpec  `yaml:"filters"`
+	Tasks    []TaskSpec    `yaml:"tasks"`
 	Prune    PruneSpec     `yaml:"prune"`
 }
 
@@ -38,6 +39,7 @@ type PruneSpec struct {
 	Projects bool `yaml:"projects"`
 	Labels   bool `yaml:"labels"`
 	Filters  bool `yaml:"filters"`
+	Tasks    bool `yaml:"tasks"`
 }
 
 type ProjectSpec struct {
@@ -63,6 +65,22 @@ type FilterSpec struct {
 	Color      *string `yaml:"color,omitempty"`
 	IsFavorite *bool   `yaml:"is_favorite,omitempty"`
 	Order      *int    `yaml:"order,omitempty"`
+}
+
+type TaskDueSpec struct {
+	String *string `yaml:"string,omitempty"`
+}
+
+type TaskSpec struct {
+	ID          *string     `yaml:"id,omitempty"`
+	Key         string      `yaml:"key,omitempty"`
+	Type        *string     `yaml:"type,omitempty"` // recurring_template (MVP)
+	Content     string      `yaml:"content"`
+	Description *string     `yaml:"description,omitempty"`
+	Project     *string     `yaml:"project,omitempty"` // project name
+	Labels      []string    `yaml:"labels,omitempty"`
+	Priority    *int        `yaml:"priority,omitempty"` // 1..4
+	Due         TaskDueSpec `yaml:"due,omitempty"`
 }
 
 func Load(path string) (*TodoistConfig, error) {
@@ -96,6 +114,7 @@ func Load(path string) (*TodoistConfig, error) {
 				Projects: sc.Projects,
 				Labels:   sc.Labels,
 				Filters:  sc.Filters,
+				Tasks:    sc.Tasks,
 				Prune:    sc.Prune,
 			},
 		}
@@ -112,6 +131,7 @@ type simpleConfig struct {
 	Projects []ProjectSpec `yaml:"projects"`
 	Labels   []LabelSpec   `yaml:"labels"`
 	Filters  []FilterSpec  `yaml:"filters"`
+	Tasks    []TaskSpec    `yaml:"tasks"`
 	Prune    PruneSpec     `yaml:"prune"`
 }
 
@@ -169,6 +189,33 @@ func (c *TodoistConfig) Normalize() {
 		if c.Spec.Filters[i].Order == nil {
 			ord := i + 1
 			c.Spec.Filters[i].Order = &ord
+		}
+	}
+	for i := range c.Spec.Tasks {
+		c.Spec.Tasks[i].Key = strings.TrimSpace(c.Spec.Tasks[i].Key)
+		c.Spec.Tasks[i].Content = strings.TrimSpace(c.Spec.Tasks[i].Content)
+		if c.Spec.Tasks[i].ID != nil {
+			id := strings.TrimSpace(*c.Spec.Tasks[i].ID)
+			c.Spec.Tasks[i].ID = &id
+		}
+		if c.Spec.Tasks[i].Type != nil {
+			typ := strings.TrimSpace(*c.Spec.Tasks[i].Type)
+			c.Spec.Tasks[i].Type = &typ
+		}
+		if c.Spec.Tasks[i].Description != nil {
+			d := strings.TrimSpace(*c.Spec.Tasks[i].Description)
+			c.Spec.Tasks[i].Description = &d
+		}
+		if c.Spec.Tasks[i].Project != nil {
+			p := strings.TrimSpace(*c.Spec.Tasks[i].Project)
+			c.Spec.Tasks[i].Project = &p
+		}
+		if c.Spec.Tasks[i].Due.String != nil {
+			ds := strings.TrimSpace(*c.Spec.Tasks[i].Due.String)
+			c.Spec.Tasks[i].Due.String = &ds
+		}
+		for j := range c.Spec.Tasks[i].Labels {
+			c.Spec.Tasks[i].Labels[j] = strings.TrimSpace(c.Spec.Tasks[i].Labels[j])
 		}
 	}
 }
@@ -278,6 +325,51 @@ func (c *TodoistConfig) Validate() error {
 		}
 		if f.Order == nil || *f.Order <= 0 {
 			errs = append(errs, fmt.Errorf("spec.filters[%d] (%q).order must be >= 1", i, f.Name))
+		}
+	}
+
+	// Tasks: require stable identity (id or key) and validate recurring template constraints.
+	taskIDs := make(map[string]struct{}, len(c.Spec.Tasks))
+	taskKeys := make(map[string]struct{}, len(c.Spec.Tasks))
+	for i, t := range c.Spec.Tasks {
+		if t.Content == "" {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d].content is required", i))
+		}
+		if t.ID == nil && t.Key == "" {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d] requires either id or key", i))
+		}
+		if t.ID != nil {
+			if *t.ID == "" {
+				errs = append(errs, fmt.Errorf("spec.tasks[%d].id cannot be empty", i))
+			} else if _, ok := taskIDs[*t.ID]; ok {
+				errs = append(errs, fmt.Errorf("duplicate task id %q", *t.ID))
+			} else {
+				taskIDs[*t.ID] = struct{}{}
+			}
+		}
+		if t.Key != "" {
+			if _, ok := taskKeys[t.Key]; ok {
+				errs = append(errs, fmt.Errorf("duplicate task key %q", t.Key))
+			} else {
+				taskKeys[t.Key] = struct{}{}
+			}
+		}
+		if t.Type != nil && *t.Type != "" && *t.Type != "recurring_template" {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d] (%q).type must be recurring_template when set", i, t.Content))
+		}
+		if t.Type != nil && *t.Type == "recurring_template" && (t.Due.String == nil || *t.Due.String == "") {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d] (%q) recurring_template requires due.string", i, t.Content))
+		}
+		if t.Priority != nil && (*t.Priority < 1 || *t.Priority > 4) {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d] (%q).priority must be in [1,4]", i, t.Content))
+		}
+		for j, l := range t.Labels {
+			if l == "" {
+				errs = append(errs, fmt.Errorf("spec.tasks[%d].labels[%d] cannot be empty", i, j))
+			}
+		}
+		if t.Due.String != nil && *t.Due.String == "" {
+			errs = append(errs, fmt.Errorf("spec.tasks[%d] (%q).due.string cannot be empty when set", i, t.Content))
 		}
 	}
 

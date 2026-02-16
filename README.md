@@ -2,7 +2,7 @@
 
 Declarative (GitOps-style) Todoist configuration reconciler.
 
-This tool is intentionally **not** for day-to-day task CRUD. It manages the *non-ad-hoc* structure of a Todoist setup (projects, labels, saved filters) from YAML committed to git, using reconciliation semantics (plan/apply) similar to Terraform or Kubernetes.
+This tool is intentionally **not** for day-to-day task CRUD. It manages the *non-ad-hoc* structure of a Todoist setup (projects, labels, saved filters, and optional recurring task templates) from YAML committed to git, using reconciliation semantics (plan/apply) similar to Terraform or Kubernetes.
 
 ## Status
 
@@ -11,6 +11,7 @@ MVP implemented:
 - Projects (name identity, color/favorite/view_style + parent relationship)
 - Labels (name identity, color/favorite)
 - Saved Filters (name identity, query/color/favorite/order) via `/sync` commands
+- Optional recurring task templates via Unified API tasks endpoints
 
 Sections and reminders are deferred.
 
@@ -93,6 +94,7 @@ prune:
   projects: false
   labels: false
   filters: false
+  tasks: false
 
 projects:
   - name: Work
@@ -115,6 +117,16 @@ filters:
     color: red
     is_favorite: true
     order: 1
+
+tasks:
+  - key: morning_review
+    type: recurring_template
+    content: Morning Review
+    project: Work
+    labels: [waiting]
+    priority: 3
+    due:
+      string: "every day at 8:00am"
 ```
 
 Notes:
@@ -141,6 +153,13 @@ Notes:
   - Managed fields: `query`, `color`, `is_favorite`, `order`
   - Implemented via `/sync` commands: `filter_add`, `filter_update`, `filter_delete`, `filter_update_orders`
   - Deletion requires `--prune` and `spec.prune.filters: true`
+
+- **Tasks (optional managed templates)**
+  - Identity key: `id` or `key` (recommended: `key`)
+  - `type: recurring_template` supports codifying recurring template tasks intentionally
+  - Managed fields: `content`, `description`, `project`, `labels`, `priority`, `due.string`
+  - Managed-by-key tasks store an internal marker line in description: `HTD_KEY:<key>`
+  - Deletion requires `--prune` and `spec.prune.tasks: true` and only applies to HTD-managed tasks
 
 ### Rename behavior (current MVP)
 

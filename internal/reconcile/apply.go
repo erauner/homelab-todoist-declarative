@@ -324,6 +324,72 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		res.Summary.Reorder++
 	}
 
+	// --- Tasks (managed templates)
+	taskCreates := filterOps(plan.Operations, KindTask, ActionCreate)
+	sort.Slice(taskCreates, func(i, j int) bool { return taskCreates[i].Name < taskCreates[j].Name })
+	for _, op := range taskCreates {
+		payload := op.TaskPayload
+		if payload == nil {
+			return nil, fmt.Errorf("task create op missing payload for %q", op.Name)
+		}
+		created, err := clients.V1.CreateTask(ctx, v1.CreateTaskRequest{
+			Content:     payload.DesiredName,
+			Description: payload.Description,
+			ProjectID:   payload.ProjectID,
+			Labels:      payload.Labels,
+			Priority:    payload.Priority,
+			DueString:   payload.DueString,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("create task %q: %w", op.Name, err)
+		}
+		res.Applied = append(res.Applied, OperationResult{Kind: KindTask, Action: ActionCreate, Name: op.Name, ID: created.ID, Status: "ok"})
+	}
+
+	taskUpdates := filterOps(plan.Operations, KindTask, ActionUpdate)
+	sort.Slice(taskUpdates, func(i, j int) bool { return taskUpdates[i].Name < taskUpdates[j].Name })
+	for _, op := range taskUpdates {
+		payload := op.TaskPayload
+		if payload == nil {
+			return nil, fmt.Errorf("task update op missing payload for %q", op.Name)
+		}
+		req := v1.UpdateTaskRequest{}
+		for _, ch := range op.Changes {
+			switch ch.Field {
+			case "content":
+				v := payload.DesiredName
+				req.Content = &v
+			case "description":
+				req.Description = payload.Description
+			case "project":
+				req.ProjectID = payload.ProjectID
+			case "labels":
+				labels := append([]string(nil), payload.Labels...)
+				req.Labels = &labels
+			case "priority":
+				req.Priority = payload.Priority
+			case "due.string":
+				req.DueString = payload.DueString
+			}
+		}
+		_, err := clients.V1.UpdateTask(ctx, op.ID, req)
+		if err != nil {
+			return nil, fmt.Errorf("update task %q: %w", op.Name, err)
+		}
+		res.Applied = append(res.Applied, OperationResult{Kind: KindTask, Action: ActionUpdate, Name: op.Name, ID: op.ID, Status: "ok"})
+	}
+
+	// --- Deletes (labels, projects) last; project deletes child-first.
+	// Tasks (only managed tasks selected by planner)
+	taskDeletes := filterOps(plan.Operations, KindTask, ActionDelete)
+	sort.Slice(taskDeletes, func(i, j int) bool { return taskDeletes[i].Name < taskDeletes[j].Name })
+	for _, op := range taskDeletes {
+		if err := clients.V1.DeleteTask(ctx, op.ID); err != nil {
+			return nil, fmt.Errorf("delete task %q: %w", op.Name, err)
+		}
+		res.Applied = append(res.Applied, OperationResult{Kind: KindTask, Action: ActionDelete, Name: op.Name, ID: op.ID, Status: "ok"})
+	}
+
 	// --- Deletes (labels, projects) last; project deletes child-first.
 	// Labels
 	labelDeletes := filterOps(plan.Operations, KindLabel, ActionDelete)

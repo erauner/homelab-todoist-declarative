@@ -107,6 +107,8 @@ func kindHeading(k reconcile.Kind) string {
 		return "Labels"
 	case reconcile.KindFilter:
 		return "Filters"
+	case reconcile.KindTask:
+		return "Tasks"
 	default:
 		s := string(k)
 		if s == "" {

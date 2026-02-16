@@ -103,3 +103,80 @@ func TestUpdateLabel_RequestShape(t *testing.T) {
 		t.Fatalf("UpdateLabel error: %v", err)
 	}
 }
+
+func TestCreateTask_RequestShape(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/api/v1/tasks" {
+			t.Fatalf("expected path /api/v1/tasks, got %s", r.URL.Path)
+		}
+		b, _ := io.ReadAll(r.Body)
+		var payload map[string]any
+		if err := json.Unmarshal(b, &payload); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		if payload["content"] != "Morning Review" {
+			t.Fatalf("expected content Morning Review, got %#v", payload["content"])
+		}
+		if payload["project_id"] != "P1" {
+			t.Fatalf("expected project_id P1, got %#v", payload["project_id"])
+		}
+		if payload["due_string"] != "every day at 8:00am" {
+			t.Fatalf("expected due_string, got %#v", payload["due_string"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"id":"T1","content":"Morning Review","description":"","project_id":"P1","labels":[],"priority":3,"due":{"string":"every day at 8:00am","is_recurring":true}}`)
+	}))
+	defer server.Close()
+
+	h := todoisthttp.New("testtoken", todoisthttp.WithBaseURL(server.URL))
+	c := New(h)
+	pid := "P1"
+	p := 3
+	due := "every day at 8:00am"
+	_, err := c.CreateTask(context.Background(), CreateTaskRequest{
+		Content:   "Morning Review",
+		ProjectID: &pid,
+		Priority:  &p,
+		DueString: &due,
+	})
+	if err != nil {
+		t.Fatalf("CreateTask error: %v", err)
+	}
+}
+
+func TestUpdateTask_RequestShape(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/api/v1/tasks/T1" {
+			t.Fatalf("expected path /api/v1/tasks/T1, got %s", r.URL.Path)
+		}
+		b, _ := io.ReadAll(r.Body)
+		var payload map[string]any
+		if err := json.Unmarshal(b, &payload); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		if payload["content"] != "Updated" {
+			t.Fatalf("expected content Updated, got %#v", payload["content"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"id":"T1","content":"Updated","description":"","project_id":"P1","labels":[],"priority":1}`)
+	}))
+	defer server.Close()
+
+	h := todoisthttp.New("testtoken", todoisthttp.WithBaseURL(server.URL))
+	c := New(h)
+	content := "Updated"
+	_, err := c.UpdateTask(context.Background(), "T1", UpdateTaskRequest{Content: &content})
+	if err != nil {
+		t.Fatalf("UpdateTask error: %v", err)
+	}
+}

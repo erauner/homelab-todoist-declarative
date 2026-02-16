@@ -14,6 +14,7 @@ type Snapshot struct {
 	Projects []v1.Project
 	Labels   []v1.Label
 	Filters  []sync.Filter
+	Tasks    []v1.Task
 
 	projectByName   map[string][]v1.Project
 	projectByID     map[string]v1.Project
@@ -21,6 +22,8 @@ type Snapshot struct {
 	labelByID       map[string]v1.Label
 	filterByName    map[string][]sync.Filter
 	filterByID      map[string]sync.Filter
+	taskByID        map[string]v1.Task
+	taskByKey       map[string]v1.Task
 	projectNameByID map[string]string
 }
 
@@ -32,6 +35,10 @@ func FetchSnapshot(ctx context.Context, v1c *v1.Client, syncc *sync.Client) (*Sn
 	labels, err := v1c.ListLabels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list labels: %w", err)
+	}
+	tasks, err := v1c.ListTasks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list tasks: %w", err)
 	}
 	filtersResp, err := syncc.Read(ctx, []string{"filters"})
 	if err != nil {
@@ -49,12 +56,15 @@ func FetchSnapshot(ctx context.Context, v1c *v1.Client, syncc *sync.Client) (*Sn
 		Projects:        projects,
 		Labels:          labels,
 		Filters:         filters,
+		Tasks:           tasks,
 		projectByName:   map[string][]v1.Project{},
 		projectByID:     map[string]v1.Project{},
 		labelByName:     map[string][]v1.Label{},
 		labelByID:       map[string]v1.Label{},
 		filterByName:    map[string][]sync.Filter{},
 		filterByID:      map[string]sync.Filter{},
+		taskByID:        map[string]v1.Task{},
+		taskByKey:       map[string]v1.Task{},
 		projectNameByID: map[string]string{},
 	}
 
@@ -80,11 +90,24 @@ func FetchSnapshot(ctx context.Context, v1c *v1.Client, syncc *sync.Client) (*Sn
 		s.filterByID[f.ID] = f
 		s.filterByName[f.Name] = append(s.filterByName[f.Name], f)
 	}
+	for _, t := range tasks {
+		if _, ok := s.taskByID[t.ID]; ok {
+			return nil, fmt.Errorf("remote has duplicate task id %q", t.ID)
+		}
+		s.taskByID[t.ID] = t
+		if key, ok := managedTaskKey(t.Description); ok {
+			if _, exists := s.taskByKey[key]; exists {
+				return nil, fmt.Errorf("remote has duplicate managed task key %q", key)
+			}
+			s.taskByKey[key] = t
+		}
+	}
 
 	// Ensure stable snapshot ordering for debugging/JSON output.
 	sort.Slice(s.Projects, func(i, j int) bool { return s.Projects[i].Name < s.Projects[j].Name })
 	sort.Slice(s.Labels, func(i, j int) bool { return s.Labels[i].Name < s.Labels[j].Name })
 	sort.Slice(s.Filters, func(i, j int) bool { return s.Filters[i].Name < s.Filters[j].Name })
+	sort.Slice(s.Tasks, func(i, j int) bool { return s.Tasks[i].Content < s.Tasks[j].Content })
 
 	return s, nil
 }
@@ -155,7 +178,30 @@ func (s *Snapshot) FilterByID(id string) (sync.Filter, bool) {
 	return f, ok
 }
 
+func (s *Snapshot) TaskByID(id string) (v1.Task, bool) {
+	t, ok := s.taskByID[id]
+	return t, ok
+}
+
+func (s *Snapshot) TaskByKey(key string) (v1.Task, bool) {
+	t, ok := s.taskByKey[key]
+	return t, ok
+}
+
 func (s *Snapshot) ProjectNameByID(id string) (string, bool) {
 	name, ok := s.projectNameByID[id]
 	return name, ok
+}
+
+func managedTaskKey(description string) (string, bool) {
+	for _, ln := range strings.Split(description, "\n") {
+		ln = strings.TrimSpace(ln)
+		if strings.HasPrefix(ln, managedTaskKeyPrefix) {
+			k := strings.TrimSpace(strings.TrimPrefix(ln, managedTaskKeyPrefix))
+			if k != "" {
+				return k, true
+			}
+		}
+	}
+	return "", false
 }

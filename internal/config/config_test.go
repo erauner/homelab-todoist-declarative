@@ -45,3 +45,30 @@ filters:
 		t.Fatalf("expected filter[1].order=2, got %#v", cfg.Spec.Filters[1].Order)
 	}
 }
+
+func TestValidate_TaskRecurringTemplate(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "tasks.yaml")
+	if err := os.WriteFile(p, []byte(`
+name: t
+projects: []
+labels: []
+filters: []
+tasks:
+  - key: morning_review
+    type: recurring_template
+    content: Morning Review
+    due:
+      string: "every day at 8:00am"
+prune:
+  projects: false
+  labels: false
+  filters: false
+  tasks: false
+`), 0o600); err != nil {
+		t.Fatalf("write temp config: %v", err)
+	}
+	if _, err := Load(p); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+}

@@ -133,6 +133,75 @@ func TestBuildPlan_ProjectID_DisambiguatesDuplicateName(t *testing.T) {
 	}
 }
 
+func TestBuildPlan_TaskByKey_Update(t *testing.T) {
+	tp := "recurring_template"
+	due := "every day at 8:00am"
+	cfg := &config.TodoistConfig{
+		Metadata: config.Metadata{Name: "test"},
+		Spec: config.Spec{
+			Tasks: []config.TaskSpec{
+				{
+					Key:     "morning_review",
+					Type:    &tp,
+					Content: "Morning Review",
+					Labels:  []string{"daily"},
+					Due:     config.TaskDueSpec{String: &due},
+				},
+			},
+		},
+	}
+	cfg.Normalize()
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	remoteTask := v1.Task{
+		ID:          "T1",
+		Content:     "Morning Review Old",
+		Description: "HTD_KEY:morning_review",
+		ProjectID:   "",
+		Labels:      []string{"old"},
+		Priority:    1,
+		Due:         &v1.Due{String: "every day at 7:00am", IsRecurring: true},
+	}
+
+	snap := &Snapshot{
+		Tasks:           []v1.Task{remoteTask},
+		Projects:        []v1.Project{},
+		Labels:          []v1.Label{},
+		Filters:         []sync.Filter{},
+		projectByName:   map[string][]v1.Project{},
+		projectByID:     map[string]v1.Project{},
+		labelByName:     map[string][]v1.Label{},
+		labelByID:       map[string]v1.Label{},
+		filterByName:    map[string][]sync.Filter{},
+		filterByID:      map[string]sync.Filter{},
+		taskByID:        map[string]v1.Task{"T1": remoteTask},
+		taskByKey:       map[string]v1.Task{"morning_review": remoteTask},
+		projectNameByID: map[string]string{},
+	}
+
+	plan, err := BuildPlan(cfg, snap, Options{Prune: false})
+	if err != nil {
+		t.Fatalf("BuildPlan: %v", err)
+	}
+	if plan.Summary.Update != 1 {
+		t.Fatalf("expected 1 task update, got %d", plan.Summary.Update)
+	}
+	found := false
+	for _, op := range plan.Operations {
+		if op.Kind == KindTask && op.Action == ActionUpdate {
+			found = true
+			if op.ID != "T1" {
+				t.Fatalf("expected task id T1, got %q", op.ID)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected task update operation")
+	}
+}
+
 func strPtr(s string) *string { return &s }
 func boolPtr(b bool) *bool    { return &b }
 func intPtr(i int) *int       { return &i }
