@@ -407,16 +407,22 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 		}
 
 		var desiredProjectID *string
+		var desiredProjectName *string
 		if t.Project != nil {
+			desiredProjectName = t.Project
 			p, ok, err := snap.ProjectByName(*t.Project)
 			if err != nil {
 				return nil, err
 			}
 			if !ok {
-				return nil, fmt.Errorf("task %q references unknown project %q", t.Content, *t.Project)
+				// Allow referencing projects declared in config that will be created in this apply.
+				if _, declared := desiredProjectNames[*t.Project]; !declared {
+					return nil, fmt.Errorf("task %q references unknown project %q", t.Content, *t.Project)
+				}
+			} else {
+				pid := p.ID
+				desiredProjectID = &pid
 			}
-			pid := p.ID
-			desiredProjectID = &pid
 		}
 
 		desiredDesc := buildManagedTaskDescription(t.Description, t.Key)
@@ -429,7 +435,7 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 					Key:         t.Key,
 					DesiredName: t.Content,
 					Description: desiredDesc,
-					ProjectName: t.Project,
+					ProjectName: desiredProjectName,
 					ProjectID:   desiredProjectID,
 					Labels:      t.Labels,
 					Priority:    t.Priority,
@@ -453,20 +459,21 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 			changes = append(changes, Change{Field: "description", From: remoteDesc, To: wantDesc})
 		}
 		remoteProjectID := remote.ProjectID
-		wantProjectID := ""
-		if desiredProjectID != nil {
-			wantProjectID = *desiredProjectID
-		}
-		if remoteProjectID != wantProjectID {
-			changes = append(changes, Change{Field: "project", From: remoteProjectID, To: wantProjectID})
+		if desiredProjectName != nil {
+			remoteProjectName := ""
+			if n, ok := snap.ProjectNameByID(remoteProjectID); ok {
+				remoteProjectName = n
+			}
+			if remoteProjectName != *desiredProjectName {
+				changes = append(changes, Change{Field: "project", From: remoteProjectName, To: *desiredProjectName})
+			}
 		}
 		if !equalStringSet(remote.Labels, t.Labels) {
 			changes = append(changes, Change{Field: "labels", From: fmt.Sprintf("%v", remote.Labels), To: fmt.Sprintf("%v", t.Labels)})
 		}
 		remotePriority := remote.Priority
-		wantPriority := 0
 		if t.Priority != nil {
-			wantPriority = *t.Priority
+			wantPriority := *t.Priority
 			if remotePriority != wantPriority {
 				changes = append(changes, Change{Field: "priority", From: fmt.Sprintf("%d", remotePriority), To: fmt.Sprintf("%d", wantPriority)})
 			}
@@ -494,7 +501,7 @@ func BuildPlan(cfg *config.TodoistConfig, snap *Snapshot, opts Options) (*Plan, 
 					Key:         t.Key,
 					DesiredName: t.Content,
 					Description: desiredDesc,
-					ProjectName: t.Project,
+					ProjectName: desiredProjectName,
 					ProjectID:   desiredProjectID,
 					Labels:      t.Labels,
 					Priority:    t.Priority,

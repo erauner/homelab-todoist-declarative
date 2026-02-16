@@ -1,0 +1,48 @@
+name: recurring-templates
+
+prune:
+  projects: false
+  labels: false
+  filters: false
+  tasks: false
+
+projects:
+  - name: Work
+  - name: Personal
+  - name: Routines
+
+labels:
+  - name: waiting
+  - name: recurring/daily
+  - name: recurring/weekly
+
+filters: []
+
+tasks:
+  - key: morning_review
+    type: recurring_template
+    content: Morning Review
+    project: Routines
+    labels: [recurring/daily]
+    priority: 3
+    due:
+      string: "every day at 8:00am"
+
+  - key: weekly_review
+    type: recurring_template
+    content: Weekly Review
+    project: Routines
+    labels: [recurring/weekly]
+    priority: 3
+    due:
+      string: "every friday at 4:00pm"
+
+  - key: plan_tomorrow
+    type: recurring_template
+    content: Plan Tomorrow
+    description: 10-minute shutdown routine.
+    project: Personal
+    labels: [recurring/daily, waiting]
+    priority: 2
+    due:
+      string: "every day at 5:30pm"

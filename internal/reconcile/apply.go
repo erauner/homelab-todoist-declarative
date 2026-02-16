@@ -332,10 +332,18 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		if payload == nil {
 			return nil, fmt.Errorf("task create op missing payload for %q", op.Name)
 		}
+		projectID := payload.ProjectID
+		if projectID == nil && payload.ProjectName != nil {
+			if pid, ok := projectNameToID[*payload.ProjectName]; ok {
+				projectID = &pid
+			} else {
+				return nil, fmt.Errorf("task %q references unknown project %q at apply time", op.Name, *payload.ProjectName)
+			}
+		}
 		created, err := clients.V1.CreateTask(ctx, v1.CreateTaskRequest{
 			Content:     payload.DesiredName,
 			Description: payload.Description,
-			ProjectID:   payload.ProjectID,
+			ProjectID:   projectID,
 			Labels:      payload.Labels,
 			Priority:    payload.Priority,
 			DueString:   payload.DueString,
@@ -353,6 +361,14 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 		if payload == nil {
 			return nil, fmt.Errorf("task update op missing payload for %q", op.Name)
 		}
+		projectID := payload.ProjectID
+		if projectID == nil && payload.ProjectName != nil {
+			if pid, ok := projectNameToID[*payload.ProjectName]; ok {
+				projectID = &pid
+			} else {
+				return nil, fmt.Errorf("task %q references unknown project %q at apply time", op.Name, *payload.ProjectName)
+			}
+		}
 		req := v1.UpdateTaskRequest{}
 		for _, ch := range op.Changes {
 			switch ch.Field {
@@ -362,7 +378,7 @@ func Apply(ctx context.Context, cfg *config.TodoistConfig, snap *Snapshot, plan 
 			case "description":
 				req.Description = payload.Description
 			case "project":
-				req.ProjectID = payload.ProjectID
+				req.ProjectID = projectID
 			case "labels":
 				labels := append([]string(nil), payload.Labels...)
 				req.Labels = &labels

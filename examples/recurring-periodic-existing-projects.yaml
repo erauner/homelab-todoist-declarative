@@ -1,0 +1,58 @@
+name: recurring-periodic
+
+prune:
+  projects: false
+  labels: false
+  filters: false
+  tasks: false
+
+projects:
+  - id: 6WwqrcwffqQHcHcC
+    name: Daily
+  - id: 6WwqrRGVFcpG5vQw
+    name: Hourly
+  - id: 6X25C9j4vqFR4MPc
+    name: Monthly
+  - id: 6X25Cx9HH65RgPFg
+    name: Every X Days
+  - id: 6X25QJMPv53wF8Gc
+    name: Weekly
+
+labels: []
+filters: []
+
+tasks:
+  - key: daily-review
+    type: recurring_template
+    content: Daily Review
+    project: Daily
+    due:
+      string: "every day at 8:00am"
+
+  - key: hourly-check
+    type: recurring_template
+    content: Hourly Check
+    project: Hourly
+    due:
+      string: "every hour"
+
+  - key: weekly-review
+    type: recurring_template
+    content: Weekly Review
+    project: Weekly
+    due:
+      string: "every friday at 4:00pm"
+
+  - key: monthly-review
+    type: recurring_template
+    content: Monthly Review
+    project: Monthly
+    due:
+      string: "every month on the first weekday"
+
+  - key: every-x-days-review
+    type: recurring_template
+    content: Every X Days Review
+    project: Every X Days
+    due:
+      string: "every 3 days"
